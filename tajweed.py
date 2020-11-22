@@ -23,7 +23,7 @@ class Tajweed():
         elif rule == 'madd246':
             dict_path = "Tajweed Apis/tajweed.madd246.json"
         elif rule == 'maddMuttasil':
-            dict_path = "Tajweed Apis/tajweed.maddMuttasilh.json"
+            dict_path = "Tajweed Apis/tajweed.maddMuttasil.json"
         elif rule == 'maddMunfasil':
             dict_path = "Tajweed Apis/tajweed.maddMunfasil.json"
         elif rule == 'madd6':

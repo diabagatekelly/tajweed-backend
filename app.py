@@ -119,13 +119,13 @@ def hamzatWasl():
 @app.route("/")
 def home():
     text = ''
-    f = open(r'C:\Users\kelly\OneDrive\Desktop\Islamic Web Dev Projects\Tajweed app python\fatiha.txt', encoding='utf-8')
+    f = open(r'C:\Users\kelly\OneDrive\Desktop\Islamic Web Dev Projects\Tajweed app python\quran-uthmani.txt', encoding='utf-8')
     text = f.read()
 
-    portion = 'ٱلرَّحۡمَـٰنِ'
+    portion = '1|1|'
 
     if portion in text:
-        portion = portion
+        ayat = portion
         return render_template('home.html', text = text, portion = portion)
     else:
         portion = 'NOne'
@@ -153,13 +153,19 @@ def pypi_func():
 
 @app.route("/generate_ayat", methods=["POST"])
 def generate_ayat():
+    # my_file = 'quran-uthmani.txt'
+    text = []
+    f = open(r'C:\Users\kelly\OneDrive\Desktop\Islamic Web Dev Projects\Tajweed app python\quran-uthmani.txt', encoding='utf-8')
+    for line in f:
+        text.append(line)
+
     rule = request.json["ruleChosen"]
     ruleDetails = Tajweed.Select_dict_path(rule)
 
     ayatRange = int(request.json["range"])
     ayat = []
     surahNumber = random.randint(1, 114)
-    fullSurah = q.quran.get_sura(surahNumber, with_tashkeel=True)
+    fullSurah = q.quran.get_sura(surahNumber, with_tashkeel=False)
 
     while len(fullSurah) < ayatRange:
         surahNumber = random.randint(1, 114)
@@ -168,8 +174,12 @@ def generate_ayat():
     if len(fullSurah) > ayatRange:
         firstAyat = random.randint(1, (len(fullSurah) - ayatRange))
         surahName = q.quran.get_sura_name(surahNumber)
-        for n in range(firstAyat, firstAyat+ayatRange):
-            test_ayat = q.quran.get_verse(surahNumber, n, with_tashkeel=True)
+        for n in range(firstAyat, firstAyat+ayatRange):   
+            target = [line for line in text if f"{surahNumber}|{n}|" in line]
+            lineArr = target[0].split('|')
+            test_ayat = lineArr[2]
+            # test_ayat = q.quran.get_verse(surahNumber, n, with_tashkeel=False)
+    
             ayatData = {
                 "test_ayat" : test_ayat
             }
