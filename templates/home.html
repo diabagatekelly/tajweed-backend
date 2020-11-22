@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}Form{% endblock %}
+
+{% block content %}
+
+<div class="row d-flex align-items-top">
+    <div class="col-12 justify-content-center text-center">
+        <h1 id="title">Tajweed App</h1>
+        <h2>What are we practicing today?</h2>
+        <form id="ruleChoiceForm">
+            <div class="form-row align-items-center">
+              <div class="col-xs-12 col-md-5 my-1">
+                <label class="mr-sm-2 sr-only" for="inlineFormRuleSelect">Rule</label>
+                <select class="custom-select mr-sm-2" id="inlineFormRuleSelect">
+                  <option selected>Choose a tajweed rule</option>
+                  <option value="ghunnah">Ghunnah</option>
+                  <option value="idghaamGhunnah">Idghaam w/ Ghunnah</option>
+                  <option value="idghaamNoGhunnah">Idghaam w/ No Ghunnah</option>
+                  <option value="ikhfa">Ikhfa</option>
+                  <option value="iqlab">Iqlab</option>
+                  <option value="madd246">Madd - 2, 4, or 6</option>
+                  <option value="maddMuttasil">Madd Muttasil</option>
+                  <option value="maddMunfasil">Madd Munfasil</option>
+                  <option value="madd6">Madd - 6</option>
+                  <option value="qalqalah">Qalqalah</option>
+                  <option value="hamzatWasl">Hamzatul Wasl</option>
+                </select>
+              </div>
+              <div class="col-xs-12 col-md-5 my-1">
+                <label class="mr-sm-2 sr-only" for="inlineFormAyatSelect">Number of Ayat</label>
+                <select class="custom-select mr-sm-2" id="inlineFormAyatSelect">
+                  <option selected>Choose a number of random Ayat</option>
+                  <option value="5">Five</option>
+                  <option value="10">Ten</option>
+                  <option value="20">Twenty</option>
+                </select>
+              </div>
+              <div class="col-auto my-1">
+                <button type="submit" class="btn btn-primary">Submit</button>
+              </div>
+            </div>
+          </form>
+    </div>
+</div>
+<div class="row d-flex mt-5">
+  <div class="col-12 justify-content-center text-right">
+<ol id="practiceAyat">
+
+</ol>
+  </div>
+</div>
+
+
+
+
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Let's play Boggle{% endblock %}
+
+{% block content %}
+
+<!-- <ul>
+    {% for item in portion%}
+    <li>{{item}}</li>
+    {% endfor %}
+</ul> -->
+{{ayat}}
+
+{{ayatDataArr}}
+
+<ul>
+    {% for item in ayatDataArr %}
+    <li>
+       <div class="ayat">
+           {{item.test_ayat}}
+       </div>
+       
+       <div class="rule">
+           {{item.rule}}
+       </div>
+       <div class="targetDiv">
+   
+       </div>
+    </li>
+    {% endfor %}
+</ul>
+  
+
+
+
+{% endblock %}
