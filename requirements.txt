@@ -1,0 +1,10 @@
+click==7.1.2
+Counter==1.0.0
+Flask==1.1.2
+itsdangerous==1.1.0
+Jinja2==2.11.2
+MarkupSafe==1.1.1
+numpy==1.19.4
+PyArabic==0.6.10
+pyquran==1.0.1
+Werkzeug==1.0.1

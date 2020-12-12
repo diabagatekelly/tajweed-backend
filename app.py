@@ -119,7 +119,7 @@ def hamzatWasl():
 @app.route("/")
 def home():
     text = ''
-    f = open(r'C:\Users\kelly\OneDrive\Desktop\Islamic Web Dev Projects\Tajweed app python\quran-uthmani.txt', encoding='utf-8')
+    f = open(r'C:\Users\kelly\Documents\Development Related\Portfolio Projects\islamic ed suite (angular + python + sql)\Tajweed app python\quran-uthmani.txt', encoding='utf-8')
     text = f.read()
 
     portion = '1|1|'
@@ -155,7 +155,7 @@ def pypi_func():
 def generate_ayat():
     # my_file = 'quran-uthmani.txt'
     text = []
-    f = open(r'C:\Users\kelly\OneDrive\Desktop\Islamic Web Dev Projects\Tajweed app python\quran-uthmani.txt', encoding='utf-8')
+    f = open(r'C:\Users\kelly\Documents\Development Related\Portfolio Projects\islamic ed suite (angular + python + sql)\Tajweed app python\quran-uthmani.txt', encoding='utf-8')
     for line in f:
         text.append(line)
 
@@ -191,11 +191,9 @@ def generate_ayat():
             ayatData["rule"] = ruleMarker
             
             ayat.append(ayatData)
-             
 
-    
     return ( jsonify(rule=rule, ayatRange=ayatRange, ayat=ayat, surahNumber=surahNumber, surahName=surahName, firstAyat=firstAyat), 200 )
-
+     
 
 
 @app.route("/test")
@@ -220,14 +218,5 @@ def test_rdg():
 
     print(ayatDataArr)
 
-    # with open("Tajweed Apis/tajweed.idghaamNoGhunnah.json") as jsonFile:
-    #     jsonObject = json.load(jsonFile)
-    #     idghaamNoGhunnahJSON["data"] = jsonObject
-    #     jsonFile.close()
-        
-    #     print(len(idghaamNoGhunnahJSON["data"]["idghaamNoGhunnah"]))
-    #     specified = idghaamNoGhunnahJSON["data"]["idghaamNoGhunnah"][5]
-        # for item in idghaamNoGhunnahJSON["data"]["idghaamNoGhunnah"]:
-        #     portion.append(item)
 
     return render_template("output.html", ayat=ayatforsurat, ayatDataArr=ayatDataArr)
