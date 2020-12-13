@@ -37,3 +37,8 @@ class Tajweed():
             jsonObject = json.load(jsonFile)
             jsonFile.close()
             return jsonObject[rule]
+
+    def Analysis_path(data):
+        with open("Tajweed Apis/analysis.json", "a") as outfile:
+            json.dump(data, outfile) 
+            

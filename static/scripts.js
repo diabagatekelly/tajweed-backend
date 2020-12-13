@@ -117,4 +117,12 @@ catch(e) {
     $('#practiceAyat').append("<h3 class='text-center'>Oops!! Something went wrong, please try again.</h3>");
 }
     
+
+try {
+    let res = await axios.post('/analysis', data).then((data) => {
+        console.log(data)
+    })
+    }catch(e) {
+        console.log(e)
+    }
 })

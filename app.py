@@ -5,6 +5,8 @@ import pyquran as q
 import output
 import random
 from tajweed import Tajweed
+import matplotlib.pyplot as plt
+
 # import "../Tajweed Apis/tajweed.ghunnah.json"
 
 
@@ -165,6 +167,15 @@ def generate_ayat():
     ayatRange = int(request.json["range"])
     ayat = []
     surahNumber = random.randint(1, 114)
+
+    # while not any(item['surah'] == surahNumber for item in ruleDetails):
+    #     surahNumber = random.randint(1, 114)
+    #     print(surahNumber)
+    #     print('had to try again')
+
+    # else:
+
+
     fullSurah = q.quran.get_sura(surahNumber, with_tashkeel=False)
 
     while len(fullSurah) < ayatRange:
@@ -173,6 +184,13 @@ def generate_ayat():
 
     if len(fullSurah) > ayatRange:
         firstAyat = random.randint(1, (len(fullSurah) - ayatRange))
+
+        # while not any(item['surah'] == surahNumber and item['ayah'] == firstAyat for item in ruleDetails):
+        #     firstAyat = random.randint(1, (len(fullSurah) - ayatRange))
+        #     print('had to try again for first ayat')
+        # else:
+
+
         surahName = q.quran.get_sura_name(surahNumber)
         for n in range(firstAyat, firstAyat+ayatRange):   
             target = [line for line in text if f"{surahNumber}|{n}|" in line]
@@ -193,30 +211,47 @@ def generate_ayat():
             ayat.append(ayatData)
 
     return ( jsonify(rule=rule, ayatRange=ayatRange, ayat=ayat, surahNumber=surahNumber, surahName=surahName, firstAyat=firstAyat), 200 )
-     
 
 
-@app.route("/test")
-def test_rdg():
-    """On the front end, make a form that will collect rule to practice, and number of questions. Then, make call to this route, which will open the correct file (maybe put that in a separate function which switch cases). It will also collect the selected number of ayats within the appropriate number range. The random numbers in this range will be the ayat indices to use """
-    ayatforsurat = []
-    ayatDataArr = []    
-    ayatArr = Tajweed.Select_dict_path("ghunnah")
-    for item in ayatArr:
-        if item["surah"] == 114:
-            ayatforsurat.append(item)
 
-    for ayat in ayatforsurat:
-        test_ayat = q.quran.get_verse(ayat["surah"], ayat["ayah"], with_tashkeel=True)
-        rule = test_ayat[ayat["start"]:ayat["start"]+1]
-        ayatData = {
-            "test_ayat" : test_ayat,
-            "rule" : rule
-        }
+@app.route("/analysis", methods=["POST"])
+def dataAnalysis():
+    rule = request.json["ruleChosen"]
 
-        ayatDataArr.append(ayatData)
+    ruleDetails = Tajweed.Select_dict_path(rule)
+    surahData = {}
 
-    print(ayatDataArr)
+    for n in range(1, 115):
+        occ = sum(item['surah'] == n for item in ruleDetails)
+        surahData[n] = occ
+    
+    Tajweed.Analysis_path({f"{rule}": surahData})
+    
+
+    return (jsonify(rule=rule, surahData=surahData))
+
+@app.route("/view-graphs", methods=["GET", "POST"])
+def viewGraphs():
+    rule = request.form.get('selectedRule')
+    sortedRule={}
+   
+    if rule != None:
+        with open("Tajweed Apis/analysis.json") as jsonFile:
+            jsonObject = json.load(jsonFile)
+            jsonFile.close()
+            sortedRule = jsonObject[rule]
+    # plt.bar(*zip(*ruleData.items()))
+
+            fig = plt.figure()
+
+            plt.bar(range(len(sortedRule)), list(sortedRule.values()), align='center')
+            plt.xticks(range(len(sortedRule)), list(sortedRule.keys()))
+            plt.locator_params(axis='x', nbins=20)
+
+            fig.suptitle(f"{rule}", fontsize=20)
+            plt.xlabel('Surah #', fontsize=14)
+            plt.ylabel('# of rules', fontsize=14)
 
 
-    return render_template("output.html", ayat=ayatforsurat, ayatDataArr=ayatDataArr)
+            plt.show()
+    return render_template("output.html", rule=rule, sortedRule=sortedRule)

@@ -4,33 +4,30 @@
 
 {% block content %}
 
-<!-- <ul>
-    {% for item in portion%}
-    <li>{{item}}</li>
-    {% endfor %}
-</ul> -->
-{{ayat}}
+<form action="/view-graphs" method='post' id="ruleChoice">
+    <div class="form-row align-items-center">
+        <div class="col-12 col-md-5 my-1">
+        <label class="mr-sm-2 sr-only" for="inlineFormRule">Rule</label>
+        <select name="selectedRule" class="custom-select mr-sm-2" id="inlineFormRule">
+            <option selected>Choose a tajweed rule</option>
+            <option value="ghunnah">Ghunnah</option>
+            <option value="idghaamGhunnah">Idghaam w/ Ghunnah</option>
+            <option value="idghaamNoGhunnah">Idghaam w/ No Ghunnah</option>
+            <option value="ikhfa">Ikhfa</option>
+            <option value="iqlab">Iqlab</option>
+            <option value="madd246">Madd - 2, 4, or 6</option>
+            <option value="maddMuttasil">Madd Muttasil</option>
+            <option value="maddMunfasil">Madd Munfasil</option>
+            <option value="madd6">Madd - 6</option>
+            <option value="qalqalah">Qalqalah</option>
+            <option value="hamzatWasl">Hamzatul Wasl</option>
+        </select>
+        <button type="submit">Submit</button>
+    </div>
+</form>
 
-{{ayatDataArr}}
-
-<ul>
-    {% for item in ayatDataArr %}
-    <li>
-       <div class="ayat">
-           {{item.test_ayat}}
-       </div>
-       
-       <div class="rule">
-           {{item.rule}}
-       </div>
-       <div class="targetDiv">
-   
-       </div>
-    </li>
-    {% endfor %}
-</ul>
-  
-
+<div>{{rule}}</div>
+<div>{{sortedRule}}</div>
 
 
 {% endblock %}
