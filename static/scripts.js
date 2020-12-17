@@ -118,11 +118,11 @@ catch(e) {
 }
     
 
-try {
-    let res = await axios.post('/analysis', data).then((data) => {
-        console.log(data)
-    })
-    }catch(e) {
-        console.log(e)
-    }
+// try {
+//     let res = await axios.post('/analysis', data).then((data) => {
+//         console.log(data)
+//     })
+//     }catch(e) {
+//         console.log(e)
+//     }
 })

@@ -162,11 +162,13 @@ def generate_ayat():
         text.append(line)
 
     rule = request.json["ruleChosen"]
-    ruleDetails = Tajweed.Select_dict_path(rule)
+    ruleDetails = Tajweed.Select_dict_path(rule)[0]
+    beg = Tajweed.Select_dict_path(rule)[1]
+    end = Tajweed.Select_dict_path(rule)[2]
 
     ayatRange = int(request.json["range"])
     ayat = []
-    surahNumber = random.randint(1, 114)
+    surahNumber = random.randint(beg, end)
 
     # while not any(item['surah'] == surahNumber for item in ruleDetails):
     #     surahNumber = random.randint(1, 114)
@@ -179,7 +181,7 @@ def generate_ayat():
     fullSurah = q.quran.get_sura(surahNumber, with_tashkeel=False)
 
     while len(fullSurah) < ayatRange:
-        surahNumber = random.randint(1, 114)
+        surahNumber = random.randint(beg, end)
         fullSurah = q.quran.get_sura(surahNumber, with_tashkeel=True)
 
     if len(fullSurah) > ayatRange:
