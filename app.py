@@ -168,51 +168,77 @@ def generate_ayat():
 
     ayatRange = int(request.json["range"])
     ayat = []
-    surahNumber = random.randint(beg, end)
 
-    # while not any(item['surah'] == surahNumber for item in ruleDetails):
-    #     surahNumber = random.randint(1, 114)
-    #     print(surahNumber)
-    #     print('had to try again')
-
-    # else:
-
-
-    fullSurah = q.quran.get_sura(surahNumber, with_tashkeel=False)
-
-    while len(fullSurah) < ayatRange:
+    if rule != "idghaamNoGhunnah" and rule != "iqlab":
         surahNumber = random.randint(beg, end)
-        fullSurah = q.quran.get_sura(surahNumber, with_tashkeel=True)
 
-    if len(fullSurah) > ayatRange:
-        firstAyat = random.randint(1, (len(fullSurah) - ayatRange))
+        fullSurah = q.quran.get_sura(surahNumber, with_tashkeel=False)
 
-        # while not any(item['surah'] == surahNumber and item['ayah'] == firstAyat for item in ruleDetails):
-        #     firstAyat = random.randint(1, (len(fullSurah) - ayatRange))
-        #     print('had to try again for first ayat')
-        # else:
+        while len(fullSurah) < ayatRange:
+            surahNumber = random.randint(beg, end)
+            fullSurah = q.quran.get_sura(surahNumber, with_tashkeel=True)
 
+        if len(fullSurah) > ayatRange:
+            firstAyat = random.randint(1, (len(fullSurah) - ayatRange))
 
-        surahName = q.quran.get_sura_name(surahNumber)
-        for n in range(firstAyat, firstAyat+ayatRange):   
-            target = [line for line in text if f"{surahNumber}|{n}|" in line]
+            surahName = q.quran.get_sura_name(surahNumber)
+            for n in range(firstAyat, firstAyat+ayatRange):   
+                target = [line for line in text if f"{surahNumber}|{n}|" in line]
+                lineArr = target[0].split('|')
+                test_ayat = lineArr[2]
+                # test_ayat = q.quran.get_verse(surahNumber, n, with_tashkeel=False)
+
+                ayatData = {
+                    "test_ayat" : test_ayat
+                }
+                ruleMarker = []
+                for item in ruleDetails:
+                    if item["surah"] == surahNumber and item["ayah"] == n:
+                        ruleMarker.append(item)
+
+                ayatData["rule"] = ruleMarker
+                ayatData["surahNumber"] = surahNumber
+                ayatData["ayahNumber"] = n
+                
+                ayat.append(ayatData)
+    
+    else: 
+        print(len(ruleDetails))
+        firstAyat = random.randint(1, (len(ruleDetails) - ayatRange))
+
+        while len(ayat) < ayatRange:
+            surahNumber = ruleDetails[firstAyat]["surah"]
+            surahName = q.quran.get_sura_name(surahNumber)
+            ayatNumber = ruleDetails[firstAyat]["ayah"]
+            target = [line for line in text if f"{surahNumber}|{ayatNumber}|" in line]
             lineArr = target[0].split('|')
             test_ayat = lineArr[2]
-            # test_ayat = q.quran.get_verse(surahNumber, n, with_tashkeel=False)
-    
+
             ayatData = {
                 "test_ayat" : test_ayat
             }
+
             ruleMarker = []
             for item in ruleDetails:
-                if item["surah"] == surahNumber and item["ayah"] == n:
+                if item["surah"] == surahNumber and item["ayah"] == ayatNumber:
                     ruleMarker.append(item)
 
             ayatData["rule"] = ruleMarker
-            
+            ayatData["surahNumber"] = surahNumber
+            ayatData["ayahNumber"] = ayatNumber
+
             ayat.append(ayatData)
 
-    return ( jsonify(rule=rule, ayatRange=ayatRange, ayat=ayat, surahNumber=surahNumber, surahName=surahName, firstAyat=firstAyat), 200 )
+            firstAyat = firstAyat + 1
+
+            if ruleDetails[firstAyat]["surah"] == surahNumber:
+                while ruleDetails[firstAyat]["ayah"] == ayatNumber:
+                    firstAyat = firstAyat + 1
+            
+
+
+
+    return ( jsonify(rule=rule, ayatRange=ayatRange, ayat=ayat), 200 )
 
 
 

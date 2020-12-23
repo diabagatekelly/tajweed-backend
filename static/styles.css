@@ -1,10 +1,22 @@
-.color {
+.notFound {
     color: red
+}
+
+.found {
+    color: yellow
 }
 
 body {
     font-family: 'Times New Roman', Times, serif;
 }
 
+#scoreBoard {
+    display: none;
+}
+
+
+.changeToPointer {
+    cursor: pointer;
+}
 
 

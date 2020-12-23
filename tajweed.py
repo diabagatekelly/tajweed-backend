@@ -21,11 +21,12 @@ class Tajweed():
         elif rule == 'idghaamGhunnah':
             dict_path = "Tajweed Apis/tajweed.idghaamGhunnah.json"
             beg = 2
-            end = 114
+            end = 45
         elif rule == 'idghaamNoGhunnah':
+            # needs to be revised
             dict_path = "Tajweed Apis/tajweed.idghaamNoGhunnah.json"
             beg = 2
-            end = 10
+            end = 7
         elif rule == 'ikhfa':
             dict_path = "Tajweed Apis/tajweed.ikhfa.json"
             beg = 2
