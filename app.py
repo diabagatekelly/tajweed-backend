@@ -1,6 +1,7 @@
 import codecs
 from collections import Counter
 from flask import Flask, render_template, jsonify, json, request
+from flask_cors import CORS
 import pyquran as q
 import output
 import random
@@ -13,6 +14,7 @@ import matplotlib.pyplot as plt
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "kelly-01221990"
 
+CORS(app)
 
 wordDict = Counter()
 
@@ -121,7 +123,7 @@ def hamzatWasl():
 @app.route("/")
 def home():
     text = ''
-    f = open(r'C:\Users\kelly\Documents\Development Related\Portfolio Projects\islamic ed suite (angular + python + sql)\Tajweed app python\quran-uthmani.txt', encoding='utf-8')
+    f = open(r'C:\Users\kelly\Documents\Development Related\Portfolio Projects\islamic ed suite (angular + python + sql)\Tajweed app python backend\quran-uthmani.txt', encoding='utf-8')
     text = f.read()
 
     portion = '1|1|'
@@ -157,7 +159,7 @@ def pypi_func():
 def generate_ayat():
     # my_file = 'quran-uthmani.txt'
     text = []
-    f = open(r'C:\Users\kelly\Documents\Development Related\Portfolio Projects\islamic ed suite (angular + python + sql)\Tajweed app python\quran-uthmani.txt', encoding='utf-8')
+    f = open(r'C:\Users\kelly\Documents\Development Related\Portfolio Projects\islamic ed suite (angular + python + sql)\Tajweed app python backend\quran-uthmani.txt', encoding='utf-8')
     for line in f:
         text.append(line)
 
