@@ -154,6 +154,15 @@ def pypi_func():
 
     return render_template("pypi.html", test_ayat=test_ayat, rule=rule)
 
+@app.route("/get_explanation", methods=["POST"])
+def get_expl():
+    rule = request.json["ruleChosen"]
+    explanationObj = Tajweed.getExplanation(rule)
+    print(explanationObj)
+
+    return ( jsonify(explanationObj=explanationObj), 200 )
+
+
 
 @app.route("/generate_ayat", methods=["POST"])
 def generate_ayat():
@@ -163,6 +172,7 @@ def generate_ayat():
     for line in f:
         text.append(line)
 
+    activity = request.json["activity"]
     rule = request.json["ruleChosen"]
     ruleDetails = Tajweed.Select_dict_path(rule)[0]
     beg = Tajweed.Select_dict_path(rule)[1]
@@ -171,7 +181,7 @@ def generate_ayat():
     ayatRange = int(request.json["range"])
     ayat = []
 
-    if rule != "idghaamNoGhunnah" and rule != "iqlab":
+    if rule != "idghaamNoGhunnah" and rule != "iqlab" and activity != "learn":
         surahNumber = random.randint(beg, end)
 
         fullSurah = q.quran.get_sura(surahNumber, with_tashkeel=False)
@@ -204,8 +214,7 @@ def generate_ayat():
                 
                 ayat.append(ayatData)
     
-    else: 
-        print(len(ruleDetails))
+    elif activity == "learn" or rule == "idghaamNoGhunnah" or rule == "iqlab": 
         firstAyat = random.randint(1, (len(ruleDetails) - ayatRange))
 
         while len(ayat) < ayatRange:
@@ -237,8 +246,6 @@ def generate_ayat():
                 while ruleDetails[firstAyat]["ayah"] == ayatNumber:
                     firstAyat = firstAyat + 1
             
-
-
 
     return ( jsonify(rule=rule, ayatRange=ayatRange, ayat=ayat), 200 )
 

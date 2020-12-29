@@ -5,7 +5,6 @@ class Tajweed():
     def __init__(self):
         self
         
-
     def Select_dict_path(rule):
         dict_path = ''
         beg = 0
@@ -60,4 +59,16 @@ class Tajweed():
     def Analysis_path(data):
         with open("Tajweed Apis/analysis.json", "a") as outfile:
             json.dump(data, outfile) 
+
+    def getExplanation(rule):
+        if rule == 'ghunnah':
+            dict_path = "Tajweed Apis/explanation.json"
+
+        with open(dict_path) as jsonFile:
+            jsonObject = json.load(jsonFile)
+            jsonFile.close()
+            return jsonObject[rule]
+
+
+
             

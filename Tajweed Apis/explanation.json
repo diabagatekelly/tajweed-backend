@@ -1,0 +1,8 @@
+{
+    "ghunnah": {
+        "summary": "http://127.0.0.1:5000//static/rule_notes/ghunnah-summary.jpg",
+        "details": "http://127.0.0.1:5000//static/rule_notes/ghunnah-notes.jpg",
+        "example": "http://127.0.0.1:5000//static/rule_notes/ghunnah-example.jpg",
+        "audioLink": "https://cdn.islamic.network/quran/audio/128/ar.husary/6236.mp3"
+    }
+}
