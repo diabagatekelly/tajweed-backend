@@ -1,19 +1,28 @@
 import codecs
 from collections import Counter
 from flask import Flask, render_template, jsonify, json, request
+from flask_debugtoolbar import DebugToolbarExtension
 from flask_cors import CORS
 import pyquran as q
-import output
 import random
 from tajweed import Tajweed
 import matplotlib.pyplot as plt
+from sqlalchemy.exc import IntegrityError
+from models import db, connect_db, User, TajweedRules, UserTajweedStats
+import os
 
 # import "../Tajweed Apis/tajweed.ghunnah.json"
 
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "kelly-01221990"
-
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
+    'DATABASE_URL', 'postgresql:///tajweed')
+# app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ECHO'] = True
+debug = DebugToolbarExtension(app)
+connect_db(app)
 CORS(app)
 
 wordDict = Counter()
@@ -115,11 +124,6 @@ def hamzatWasl():
 
 
 
-
-
-
-
-
 @app.route("/")
 def home():
     text = ''
@@ -136,23 +140,67 @@ def home():
         return render_template("home.html", text=text, portion=portion)
 
 
-@app.route("/pypi")
-def pypi_func():
-    test_ayat = q.quran.get_verse(114, 1, with_tashkeel=True)
-    # readFile = json.loads("../Tajweed Apis/tajweed.ghunnah.json")
-    # json.loads("../")
-    # rules = readFile["ghunnah"]
+# @app.route("/pypi")
+# def pypi_func():
+#     test_ayat = q.quran.get_verse(114, 1, with_tashkeel=True)
+#     # readFile = json.loads("../Tajweed Apis/tajweed.ghunnah.json")
+#     # json.loads("../")
+#     # rules = readFile["ghunnah"]
 
-    # for item in rules:
-    #     if item["surah"] == 112:
-    #         print(item)
+#     # for item in rules:
+#     #     if item["surah"] == 112:
+#     #         print(item)
 
-    rule = test_ayat[23:24]
+#     rule = test_ayat[23:24]
 
-    string = q.quran.get_verse(2, 3, with_tashkeel=True)
-    index = q.search_sequence(sequancesList=['قْ'], chapterNum=2, verseNum=3, mode=1)
+#     string = q.quran.get_verse(2, 3, with_tashkeel=True)
+#     index = q.search_sequence(sequancesList=['قْ'], chapterNum=2, verseNum=3, mode=1)
 
-    return render_template("pypi.html", test_ayat=test_ayat, rule=rule)
+#     return render_template("pypi.html", test_ayat=test_ayat, rule=rule)
+
+
+# @app.route("/analysis", methods=["POST"])
+# def dataAnalysis():
+#     rule = request.json["ruleChosen"]
+
+#     ruleDetails = Tajweed.Select_dict_path(rule)
+#     surahData = {}
+
+#     for n in range(1, 115):
+#         occ = sum(item['surah'] == n for item in ruleDetails)
+#         surahData[n] = occ
+    
+#     Tajweed.Analysis_path({f"{rule}": surahData})
+    
+
+#     return (jsonify(rule=rule, surahData=surahData))
+
+# @app.route("/view-graphs", methods=["GET", "POST"])
+# def viewGraphs():
+#     rule = request.form.get('selectedRule')
+#     sortedRule={}
+   
+#     if rule != None:
+#         with open("Tajweed Apis/analysis.json") as jsonFile:
+#             jsonObject = json.load(jsonFile)
+#             jsonFile.close()
+#             sortedRule = jsonObject[rule]
+#     # plt.bar(*zip(*ruleData.items()))
+
+#             fig = plt.figure()
+
+#             plt.bar(range(len(sortedRule)), list(sortedRule.values()), align='center')
+#             plt.xticks(range(len(sortedRule)), list(sortedRule.keys()))
+#             plt.locator_params(axis='x', nbins=20)
+
+#             fig.suptitle(f"{rule}", fontsize=20)
+#             plt.xlabel('Surah #', fontsize=14)
+#             plt.ylabel('# of rules', fontsize=14)
+
+
+#             plt.show()
+#     return render_template("output.html", rule=rule, sortedRule=sortedRule)
+
 
 @app.route("/get_explanation", methods=["POST"])
 def get_expl():
@@ -163,10 +211,8 @@ def get_expl():
     return ( jsonify(explanationObj=explanationObj), 200 )
 
 
-
 @app.route("/generate_ayat", methods=["POST"])
 def generate_ayat():
-    # my_file = 'quran-uthmani.txt'
     text = []
     f = open(r'C:\Users\kelly\Documents\Development Related\Portfolio Projects\islamic ed suite (angular + python + sql)\Tajweed app python backend\quran-uthmani.txt', encoding='utf-8')
     for line in f:
@@ -198,7 +244,6 @@ def generate_ayat():
                 target = [line for line in text if f"{surahNumber}|{n}|" in line]
                 lineArr = target[0].split('|')
                 test_ayat = lineArr[2]
-                # test_ayat = q.quran.get_verse(surahNumber, n, with_tashkeel=False)
 
                 ayatData = {
                     "test_ayat" : test_ayat
@@ -245,50 +290,62 @@ def generate_ayat():
             if ruleDetails[firstAyat]["surah"] == surahNumber:
                 while ruleDetails[firstAyat]["ayah"] == ayatNumber:
                     firstAyat = firstAyat + 1
-            
 
     return ( jsonify(rule=rule, ayatRange=ayatRange, ayat=ayat), 200 )
 
 
 
-@app.route("/analysis", methods=["POST"])
-def dataAnalysis():
-    rule = request.json["ruleChosen"]
+@app.route("/auth", methods=["POST"])
+def auth():
+    userData = request.json["data"]
+    mode = request.json["mode"]
 
-    ruleDetails = Tajweed.Select_dict_path(rule)
-    surahData = {}
+    if mode == 'register':
+        try:
+            user = User.register(
+                first_name = userData["firstName"], 
+                last_name = userData["lastName"], 
+                email = userData["email"], 
+                username = userData["username"], 
+                password = userData["password"])
 
-    for n in range(1, 115):
-        occ = sum(item['surah'] == n for item in ruleDetails)
-        surahData[n] = occ
+            db.session.commit()
+            print(user)
+
+            userObj = {
+                "username": user.username,
+                "firstName": user.first_name,
+                "lastName": user.last_name
+            }
+            
+            return (jsonify(userObj = userObj), 200 )
+
+        except IntegrityError:
+            return (jsonify(res='error in registering new user'), 200 )
+
+    elif mode == 'login':
+        try:
+            user = User.authenticate(
+            username = userData["username"], 
+            password = userData["password"])
+
+            db.session.commit()
+            print(user.username)
+
+            userObj = {
+                "username": user.username,
+                "firstName": user.first_name,
+                "lastName": user.last_name
+            }
+
+            return (jsonify(userObj=userObj), 200 )
+            
+        except IntegrityError:
+            return (jsonify(res='error in logging in user'), 200 )
+
     
-    Tajweed.Analysis_path({f"{rule}": surahData})
-    
-
-    return (jsonify(rule=rule, surahData=surahData))
-
-@app.route("/view-graphs", methods=["GET", "POST"])
-def viewGraphs():
-    rule = request.form.get('selectedRule')
-    sortedRule={}
-   
-    if rule != None:
-        with open("Tajweed Apis/analysis.json") as jsonFile:
-            jsonObject = json.load(jsonFile)
-            jsonFile.close()
-            sortedRule = jsonObject[rule]
-    # plt.bar(*zip(*ruleData.items()))
-
-            fig = plt.figure()
-
-            plt.bar(range(len(sortedRule)), list(sortedRule.values()), align='center')
-            plt.xticks(range(len(sortedRule)), list(sortedRule.keys()))
-            plt.locator_params(axis='x', nbins=20)
-
-            fig.suptitle(f"{rule}", fontsize=20)
-            plt.xlabel('Surah #', fontsize=14)
-            plt.ylabel('# of rules', fontsize=14)
 
 
-            plt.show()
-    return render_template("output.html", rule=rule, sortedRule=sortedRule)
+
+
+
