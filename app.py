@@ -318,6 +318,12 @@ def auth():
             if user:
                 isAuthenticated = True
                 session["isAuthenticated"] = user.username
+                session["user"] = {
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "email": user.email,
+                    "username": user.username
+                }
                 return (jsonify(isAuthenticated=isAuthenticated), 200 )
             else:
                 isAuthenticated = False
@@ -341,6 +347,12 @@ def auth():
             if user:
                 isAuthenticated = True
                 session["isAuthenticated"] = user.username
+                session["user"] = {
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "email": user.email,
+                    "username": user.username
+                }
 
                 print('in login, retrieved user', session)
                 return (jsonify(isAuthenticated=isAuthenticated), 200 )
@@ -362,9 +374,16 @@ def verify_auth():
     print('in verify_auth', session)
     if "isAuthenticated" in session:
         isAuthenticated = True
+        saved_user = session["user"]
+        print(saved_user)
+        user = {
+            "username": saved_user["username"],
+            "firstName": saved_user["first_name"],
+            "lastName": saved_user["last_name"]
+        }
         print('in verify auth and isauthenticated found in session', isAuthenticated)
 
-        return (jsonify(response=isAuthenticated), 200 )
+        return (jsonify(response=isAuthenticated, user=user), 200 )
 
     elif not "isAuthenticated" in session:
         isAuthenticated = False
@@ -375,6 +394,7 @@ def verify_auth():
 def logout():
     print('in logout', session)
     session.pop('isAuthenticated', None)
+    session.pop('user', None)
     isAuthenticated = False
 
     return (jsonify(response=isAuthenticated), 200 )
