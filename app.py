@@ -1,8 +1,8 @@
 import codecs
 from collections import Counter
-from flask import Flask, render_template, jsonify, json, request
+from flask import Flask, render_template, jsonify, json, request, session
 from flask_debugtoolbar import DebugToolbarExtension
-from flask_cors import CORS
+# from flask_cors import CORS, cross_origin
 import pyquran as q
 import random
 from tajweed import Tajweed
@@ -15,15 +15,14 @@ import os
 
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "kelly-01221990"
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
-    'DATABASE_URL', 'postgresql:///tajweed')
+app.config["SECRET_KEY"] = "kelly-af-01221990"
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'postgresql:///tajweed')
 # app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = True
+
 debug = DebugToolbarExtension(app)
 connect_db(app)
-CORS(app)
 
 wordDict = Counter()
 
@@ -126,6 +125,7 @@ def hamzatWasl():
 
 @app.route("/")
 def home():
+    print('loading home', session)
     text = ''
     f = open(r'C:\Users\kelly\Documents\Development Related\Portfolio Projects\islamic ed suite (angular + python + sql)\Tajweed app python backend\quran-uthmani.txt', encoding='utf-8')
     text = f.read()
@@ -202,7 +202,7 @@ def home():
 #     return render_template("output.html", rule=rule, sortedRule=sortedRule)
 
 
-@app.route("/get_explanation", methods=["POST"])
+@app.route("/api/get_explanation", methods=["POST"])
 def get_expl():
     rule = request.json["ruleChosen"]
     explanationObj = Tajweed.getExplanation(rule)
@@ -211,7 +211,7 @@ def get_expl():
     return ( jsonify(explanationObj=explanationObj), 200 )
 
 
-@app.route("/generate_ayat", methods=["POST"])
+@app.route("/api/generate_ayat", methods=["POST"])
 def generate_ayat():
     text = []
     f = open(r'C:\Users\kelly\Documents\Development Related\Portfolio Projects\islamic ed suite (angular + python + sql)\Tajweed app python backend\quran-uthmani.txt', encoding='utf-8')
@@ -295,10 +295,14 @@ def generate_ayat():
 
 
 
-@app.route("/auth", methods=["POST"])
+@app.route("/api/auth", methods=["POST"])
 def auth():
+    print('firing auth', session)
+
     userData = request.json["data"]
     mode = request.json["mode"]
+
+    print('calling auth', mode)
 
     if mode == 'register':
         try:
@@ -310,18 +314,21 @@ def auth():
                 password = userData["password"])
 
             db.session.commit()
-            print(user)
 
-            userObj = {
-                "username": user.username,
-                "firstName": user.first_name,
-                "lastName": user.last_name
-            }
+            if user:
+                isAuthenticated = True
+                session["isAuthenticated"] = user.username
+                return (jsonify(isAuthenticated=isAuthenticated), 200 )
+            else:
+                isAuthenticated = False
+                message = 'Error registering user'
+                return (jsonify(isAuthenticated=isAuthenticated, message=message), 400 )
+
             
-            return (jsonify(userObj = userObj), 200 )
-
         except IntegrityError:
-            return (jsonify(res='error in registering new user'), 200 )
+            isAuthenticated = False
+            message = 'Error registering user'
+            return (jsonify(isAuthenticated=isAuthenticated, message=message), 500 )
 
     elif mode == 'login':
         try:
@@ -330,19 +337,48 @@ def auth():
             password = userData["password"])
 
             db.session.commit()
-            print(user.username)
 
-            userObj = {
-                "username": user.username,
-                "firstName": user.first_name,
-                "lastName": user.last_name
-            }
+            if user:
+                isAuthenticated = True
+                session["isAuthenticated"] = user.username
 
-            return (jsonify(userObj=userObj), 200 )
+                print('in login, retrieved user', session)
+                return (jsonify(isAuthenticated=isAuthenticated), 200 )
+            else:
+                isAuthenticated = False
+                message = 'Error logging in user'
+                return (jsonify(isAuthenticated=isAuthenticated, message=message), 401 )
             
         except IntegrityError:
-            return (jsonify(res='error in logging in user'), 200 )
+            isAuthenticated = False
+            message = 'Error logging in user'
+            return (jsonify(isAuthenticated=isAuthenticated, message=message), 500 )
 
+    else:
+        print('no mode at all')        
+
+@app.route('/api/verify_auth')
+def verify_auth():
+    print('in verify_auth', session)
+    if "isAuthenticated" in session:
+        isAuthenticated = True
+        print('in verify auth and isauthenticated found in session', isAuthenticated)
+
+        return (jsonify(response=isAuthenticated), 200 )
+
+    elif not "isAuthenticated" in session:
+        isAuthenticated = False
+        print('in verify auth and isauthenticated NOT found in session', isAuthenticated)
+        return (jsonify(response=isAuthenticated), 200 )
+
+@app.route('/api/logout')
+def logout():
+    print('in logout', session)
+    session.pop('isAuthenticated', None)
+    isAuthenticated = False
+
+    return (jsonify(response=isAuthenticated), 200 )
+  
     
 
 
