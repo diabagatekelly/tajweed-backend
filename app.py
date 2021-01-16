@@ -354,6 +354,7 @@ def auth():
                     "username": user.username
                 }
 
+                print('other user stat', user.tajweed_rule)
                 print('in login, retrieved user', session)
                 return (jsonify(isAuthenticated=isAuthenticated), 200 )
             else:
@@ -398,6 +399,116 @@ def logout():
     isAuthenticated = False
 
     return (jsonify(response=isAuthenticated), 200 )
+
+@app.route('/api/update_practice', methods=['POST'])
+def update_practice():
+    username = request.json["username"]
+    stats = request.json["stats"]
+
+    allTajArr = []
+
+    user = User.query.filter_by(username=username).first()
+    user_rule = [c for c in user.tajweed_rule if c.code == stats['rule']]
+    
+    if len(user_rule) == 0:
+        tajweed = TajweedRules(code=stats['rule'], name=stats['rule'], last_practice=db.func.now(), practice_ayah_count=stats['ayah_count'])
+        
+        db.session.add(tajweed)
+        db.session.commit()
+
+        user_tajweed = UserTajweedStats(user_id=user.id, rule_code=stats['rule'])
+        db.session.add(user_tajweed)
+            
+    else:
+        user_rule[0].last_practice = db.func.now()
+        user_rule[0].practice_ayah_count = user_rule[0].practice_ayah_count + stats['ayah_count']
+
+    db.session.commit()
+
+    allTaj = TajweedRules.query.filter(UserTajweedStats.user_id==user.id).all()
+
+    userObj = {
+        "username": user.username,
+        "firstName": user.first_name,
+        "lastName": user.last_name
+    }
+
+    for i in allTaj:
+        allTajObj = {
+        "code" : i.code,
+        "last_practice": i.last_practice,
+        "practice_ayah_count": i.practice_ayah_count,
+        "last_test": i.last_test,
+        "test_ayah_count": i.test_ayah_count,
+        "test_score_correct": i.test_score_correct,
+        "test_out_of_count": i.test_out_of_count,
+        "test_score_composite": i.test_score_composite
+        }
+        
+
+        allTajArr.append(allTajObj)
+
+    return (jsonify(userObj=userObj, allTajArr=allTajArr), 200)
+
+
+@app.route('/api/update_test', methods=['POST'])
+def update_test():
+    username = request.json["username"]
+    stats = request.json["stats"]
+
+    allTajArr = []
+
+    user = User.query.filter_by(username=username).first()
+    user_rule = [c for c in user.tajweed_rule if c.code == stats['rule']]
+    
+    if len(user_rule) == 0:
+        tajweed = TajweedRules(code=stats['rule'], name=stats['rule'], last_test=db.func.now(), test_ayah_count=stats['ayah_count'], test_score_correct=stats['correct'], test_out_of_count=stats['out_of'], test_score_composite=stats['score'], total_correct=stats['correct'], total_out_of=stats['out_of'])
+        
+        db.session.add(tajweed)
+        db.session.commit()
+
+        user_tajweed = UserTajweedStats(user_id=user.id, rule_code=stats['rule'])
+        db.session.add(user_tajweed)
+            
+    else:
+        user_rule[0].last_test = db.func.now()
+        user_rule[0].test_ayah_count = user_rule[0].test_ayah_count + stats['ayah_count']
+        user_rule[0].test_score_correct = stats['correct']
+        user_rule[0].test_out_of_count = stats['out_of']
+        user_rule[0].test_score_composite = stats['score']
+        user_rule[0].total_correct = user_rule[0].total_correct + stats['correct']
+        user_rule[0].total_out_of = user_rule[0].total_out_of + stats['out_of']
+
+
+    db.session.commit()
+
+    allTaj = TajweedRules.query.filter(UserTajweedStats.user_id==user.id).all()
+
+    userObj = {
+        "username": user.username,
+        "firstName": user.first_name,
+        "lastName": user.last_name
+    }
+
+    for i in allTaj:
+        allTajObj = {
+        "code" : i.code,
+        "last_practice": i.last_practice,
+        "practice_ayah_count": i.practice_ayah_count,
+        "last_test": i.last_test,
+        "test_ayah_count": i.test_ayah_count,
+        "test_score_correct": i.test_score_correct,
+        "test_out_of_count": i.test_out_of_count,
+        "test_score_composite": i.test_score_composite,
+        "total_correct": i.total_correct,
+        "total_out_of": i.total_out_of
+        }
+        
+
+        allTajArr.append(allTajObj)
+
+    return (jsonify(userObj=userObj, allTajArr=allTajArr), 200)
+
   
     
 

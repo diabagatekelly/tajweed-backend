@@ -33,12 +33,7 @@ class User(db.Model):
                         server_default=db.func.now(), 
                         server_onupdate=db.func.now())
 
-    tajweed_rule = db.relationship('TajweedRules', secondary="user_tajweed_stats")
-    practice_date = db.relationship('TajweedRules', secondary="user_tajweed_stats")
-    test_date = db.relationship('TajweedRules', secondary="user_tajweed_stats")
-    test_score = db.relationship('TajweedRules', secondary="user_tajweed_stats")
-    test_mastery = db.relationship('TajweedRules', secondary="user_tajweed_stats")
-
+    tajweed_rule = db.relationship('TajweedRules', secondary="user_tajweed_stats", backref='user')
 
     # start_register
     @classmethod
@@ -66,6 +61,11 @@ class User(db.Model):
         u = User.query.filter_by(username=username).first()
 
         if u and Bcrypt.check_password_hash(cls, u.password, password):
+            u.last_login = db.func.now()
+
+            db.session.add(u)
+
+            db.session.commit()
             # return user instance
             return u
         else:
@@ -82,12 +82,35 @@ class TajweedRules(db.Model):
                     primary_key=True)
     name = db.Column(db.Text,
                     nullable=False)
-   
-    user_rule = db.relationship('User', secondary="user_tajweed_stats")
-    user_practice_date = db.relationship('User', secondary="user_tajweed_stats")
-    user_test_date = db.relationship('User', secondary="user_tajweed_stats")
-    user_test_score = db.relationship('User', secondary="user_tajweed_stats")
-    user_test_mastery = db.relationship('User', secondary="user_tajweed_stats")
+    last_practice = db.Column(db.DateTime, 
+                    nullable=True)
+    practice_ayah_count = db.Column(db.Integer,
+                    nullable=False,
+                    default=0)
+    last_test = db.Column(db.DateTime, 
+                    nullable=True)
+    test_ayah_count = db.Column(db.Integer,
+                    nullable=False,
+                    default=0)
+    test_score_correct = db.Column(db.Integer,
+                    nullable=False,
+                    default=0)
+    test_out_of_count = db.Column(db.Integer,
+                    nullable=False,
+                    default=0)
+    test_score_composite = db.Column(db.Text,
+                        nullable=False,
+                        default='0/0')
+    total_correct = db.Column(db.Integer,
+                    nullable=False,
+                    default=0)
+    total_out_of = db.Column(db.Integer,
+                    nullable=False,
+                    default=0)
+    
+    
+    user_rule = db.relationship('User', secondary="user_tajweed_stats", backref='tajweed_rules')
+
 
 
 class UserTajweedStats(db.Model):
@@ -98,4 +121,3 @@ class UserTajweedStats(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     rule_code = db.Column(db.Text, db.ForeignKey('tajweed_rules.code'))
-    
