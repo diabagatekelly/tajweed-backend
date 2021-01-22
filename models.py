@@ -30,8 +30,8 @@ class User(db.Model):
     last_name = db.Column(db.String(30),
                         nullable=False)
     last_login = db.Column(db.DateTime, 
-                        server_default=db.func.now(), 
-                        server_onupdate=db.func.now())
+                        server_default=db.func.current_date(), 
+                        server_onupdate=db.func.current_date())
 
     tajweed_rule = db.relationship('TajweedRules', secondary="user_tajweed_stats", backref='user')
 
@@ -47,6 +47,7 @@ class User(db.Model):
         # return instance of user w/username and hashed pwd
         user = User(first_name=first_name, last_name=last_name, email=email, username=username, password=hashed_utf8)
         db.session.add(user)
+
         return user
     # end_register
 
@@ -61,7 +62,7 @@ class User(db.Model):
         u = User.query.filter_by(username=username).first()
 
         if u and Bcrypt.check_password_hash(cls, u.password, password):
-            u.last_login = db.func.now()
+            u.last_login = db.func.current_date()
 
             db.session.add(u)
 
@@ -78,29 +79,18 @@ class TajweedRules(db.Model):
 
     __tablename__ = "tajweed_rules"
 
-    code = db.Column(db.Text, 
+    id = db.Column(db.Integer, 
                     primary_key=True)
-    name = db.Column(db.Text,
+    code = db.Column(db.Text, 
                     nullable=False)
-    last_practice = db.Column(db.DateTime, 
-                    nullable=True)
+    practice = db.relationship('Practice', backref='tajweed_rules')
     practice_ayah_count = db.Column(db.Integer,
                     nullable=False,
                     default=0)
-    last_test = db.Column(db.DateTime, 
-                    nullable=True)
+    test = db.relationship('Test', backref='tajweed_rules')
     test_ayah_count = db.Column(db.Integer,
                     nullable=False,
                     default=0)
-    test_score_correct = db.Column(db.Integer,
-                    nullable=False,
-                    default=0)
-    test_out_of_count = db.Column(db.Integer,
-                    nullable=False,
-                    default=0)
-    test_score_composite = db.Column(db.Text,
-                        nullable=False,
-                        default='0/0')
     total_correct = db.Column(db.Integer,
                     nullable=False,
                     default=0)
@@ -120,4 +110,41 @@ class UserTajweedStats(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    rule_code = db.Column(db.Text, db.ForeignKey('tajweed_rules.code'))
+    rule_id = db.Column(db.Integer, db.ForeignKey('tajweed_rules.id'))
+
+
+      
+
+class Practice(db.Model):
+    """Practice Stat"""
+
+    __tablename__ = "practice"
+
+    id = db.Column(db.Integer, primary_key=True)
+    practice_date = db.Column(db.DateTime, 
+                nullable=False)
+    ayah_count = db.Column(db.Integer,
+                nullable=False)
+    rule_id = db.Column(db.Integer, db.ForeignKey('tajweed_rules.id'))
+
+class Test(db.Model):
+    """Test Stats"""
+
+    __tablename__= "test"
+
+    id = db.Column(db.Integer, primary_key=True)
+    test_date = db.Column(db.DateTime, 
+                    nullable=True)
+    test_ayah_count = db.Column(db.Integer,
+                    nullable=False,
+                    default=0)
+    test_score_correct = db.Column(db.Integer,
+                    nullable=False,
+                    default=0)
+    test_out_of_count = db.Column(db.Integer,
+                    nullable=False,
+                    default=0)
+    test_score_composite = db.Column(db.Text,
+                        nullable=False,
+                        default='0/0')
+    rule_id = db.Column(db.Integer, db.ForeignKey('tajweed_rules.id'))                    

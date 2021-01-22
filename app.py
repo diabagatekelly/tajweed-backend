@@ -8,7 +8,7 @@ import random
 from tajweed import Tajweed
 import matplotlib.pyplot as plt
 from sqlalchemy.exc import IntegrityError
-from models import db, connect_db, User, TajweedRules, UserTajweedStats
+from models import db, connect_db, User, TajweedRules, UserTajweedStats, Practice, Test
 import os
 
 # import "../Tajweed Apis/tajweed.ghunnah.json"
@@ -28,6 +28,8 @@ wordDict = Counter()
 
 tajweedJSON = {}
 idghaamNoGhunnahJSON = {}
+
+Rules = ["ghunnah", "hamzatWasl", "idghaamGhunnah", "idghaamNoGhunnah", "ikhfa", "iqlab", "madd", "madd246", "qalqalah"]
 
 # Get Original JSON File
 @app.before_request
@@ -301,6 +303,7 @@ def auth():
 
     userData = request.json["data"]
     mode = request.json["mode"]
+    allTajArr = []
 
     print('calling auth', mode)
 
@@ -324,6 +327,61 @@ def auth():
                     "email": user.email,
                     "username": user.username
                 }
+
+                for r in Rules:
+                    rules = TajweedRules(code=r)
+                    db.session.add(rules)
+                    db.session.commit()
+
+                    user_tajweed = UserTajweedStats(user_id=user.id, rule_id=rules.id)
+                    db.session.add(user_tajweed)
+                    db.session.commit()
+
+
+                allTaj = user.tajweed_rule
+                
+                for i in allTaj:
+                    allTajObj = {
+                        "code" : i.code,
+                        "practice_ayah_count": i.practice_ayah_count,
+                        "test_ayah_count": i.test_ayah_count,
+                        "total_correct": i.total_correct,
+                        "total_out_of": i.total_out_of
+                    }
+
+                    practice = []
+                    test = []
+
+                    for r in i.practice:
+                        p_stats = {
+                            'practice_date': r.practice_date,
+                            'ayah_count': r.ayah_count
+                        }
+        
+                        # practice.append(p_stats)  
+                        practice.insert(0, p_stats)  
+
+                    for t in i.test:
+                        t_stats = {
+                            'test_date': t.test_date,
+                            'test_ayah_count': t.test_ayah_count,
+                            'test_score_correct': t.test_score_correct,
+                            'test_out_of_count': t.test_out_of_count,
+                            'test_score_composite': t.test_score_composite
+                        }
+        
+                        # test.append(t_stats)  
+                        test.insert(0, t_stats) 
+                        
+        
+                    allTajObj['practice'] = practice  
+                    allTajObj['test'] = test
+                    
+
+                    allTajArr.append(allTajObj)
+
+                session["tajweed"] = allTajArr                
+
                 return (jsonify(isAuthenticated=isAuthenticated), 200 )
             else:
                 isAuthenticated = False
@@ -337,35 +395,81 @@ def auth():
             return (jsonify(isAuthenticated=isAuthenticated, message=message), 500 )
 
     elif mode == 'login':
-        try:
-            user = User.authenticate(
-            username = userData["username"], 
-            password = userData["password"])
+        if 'user' in session and session['user']["first_name"] == userData["username"]:
+            return (jsonify(isAuthenticated=isAuthenticated), 200 )
+        else:
+            try:
+                user = User.authenticate(
+                username = userData["username"], 
+                password = userData["password"])
 
-            db.session.commit()
+                db.session.commit()
 
-            if user:
-                isAuthenticated = True
-                session["isAuthenticated"] = user.username
-                session["user"] = {
-                    "first_name": user.first_name,
-                    "last_name": user.last_name,
-                    "email": user.email,
-                    "username": user.username
-                }
+                if user:
+                    isAuthenticated = True
+                    session["isAuthenticated"] = user.username
+                    session["user"] = {
+                        "first_name": user.first_name,
+                        "last_name": user.last_name,
+                        "email": user.email,
+                        "username": user.username
+                    }
 
-                print('other user stat', user.tajweed_rule)
-                print('in login, retrieved user', session)
-                return (jsonify(isAuthenticated=isAuthenticated), 200 )
-            else:
+                    allTaj = user.tajweed_rule
+
+
+                    for i in allTaj:
+                        allTajObj = {
+                            "code" : i.code,
+                            "practice_ayah_count": i.practice_ayah_count,
+                            "test_ayah_count": i.test_ayah_count,
+                            "total_correct": i.total_correct,
+                            "total_out_of": i.total_out_of
+                        }
+
+                        practice = []
+                        test = []
+
+                        for r in i.practice:
+                            p_stats = {
+                                'practice_date': r.practice_date,
+                                'ayah_count': r.ayah_count
+                            }
+            
+                            # practice.append(p_stats)  
+                            practice.insert(0, p_stats)  
+
+                        for t in i.test:
+                            t_stats = {
+                                'test_date': t.test_date,
+                                'test_ayah_count': t.test_ayah_count,
+                                'test_score_correct': t.test_score_correct,
+                                'test_out_of_count': t.test_out_of_count,
+                                'test_score_composite': t.test_score_composite
+                            }
+            
+                            # test.append(t_stats)  
+                            test.insert(0, t_stats) 
+                         
+            
+                        allTajObj['practice'] = practice  
+                        allTajObj['test'] = test
+                        
+
+                        allTajArr.append(allTajObj)
+
+                    session["tajweed"] = allTajArr
+                
+                    return (jsonify(isAuthenticated=isAuthenticated), 200 )
+                else:
+                    isAuthenticated = False
+                    message = 'Error logging in user'
+                    return (jsonify(isAuthenticated=isAuthenticated, message=message), 401 )
+                
+            except IntegrityError:
                 isAuthenticated = False
                 message = 'Error logging in user'
-                return (jsonify(isAuthenticated=isAuthenticated, message=message), 401 )
-            
-        except IntegrityError:
-            isAuthenticated = False
-            message = 'Error logging in user'
-            return (jsonify(isAuthenticated=isAuthenticated, message=message), 500 )
+                return (jsonify(isAuthenticated=isAuthenticated, message=message), 500 )
 
     else:
         print('no mode at all')        
@@ -376,15 +480,18 @@ def verify_auth():
     if "isAuthenticated" in session:
         isAuthenticated = True
         saved_user = session["user"]
-        print(saved_user)
+        tajweed = session["tajweed"]
+        
         user = {
             "username": saved_user["username"],
             "firstName": saved_user["first_name"],
             "lastName": saved_user["last_name"]
         }
+
+            
         print('in verify auth and isauthenticated found in session', isAuthenticated)
 
-        return (jsonify(response=isAuthenticated, user=user), 200 )
+        return (jsonify(response=isAuthenticated, user=user, tajweed=tajweed), 200 )
 
     elif not "isAuthenticated" in session:
         isAuthenticated = False
@@ -396,6 +503,7 @@ def logout():
     print('in logout', session)
     session.pop('isAuthenticated', None)
     session.pop('user', None)
+    session.pop('tajweed', None)
     isAuthenticated = False
 
     return (jsonify(response=isAuthenticated), 200 )
@@ -410,22 +518,16 @@ def update_practice():
     user = User.query.filter_by(username=username).first()
     user_rule = [c for c in user.tajweed_rule if c.code == stats['rule']]
     
-    if len(user_rule) == 0:
-        tajweed = TajweedRules(code=stats['rule'], name=stats['rule'], last_practice=db.func.now(), practice_ayah_count=stats['ayah_count'])
-        
-        db.session.add(tajweed)
-        db.session.commit()
+    practice = Practice(practice_date=db.func.current_date(), ayah_count=stats['ayah_count'], rule_id=user_rule[0].id)
 
-        user_tajweed = UserTajweedStats(user_id=user.id, rule_code=stats['rule'])
-        db.session.add(user_tajweed)
-            
-    else:
-        user_rule[0].last_practice = db.func.now()
-        user_rule[0].practice_ayah_count = user_rule[0].practice_ayah_count + stats['ayah_count']
+    db.session.add(practice)
+    db.session.commit()  
+
+    user_rule[0].practice_ayah_count = user_rule[0].practice_ayah_count + stats['ayah_count']
 
     db.session.commit()
 
-    allTaj = TajweedRules.query.filter(UserTajweedStats.user_id==user.id).all()
+    allTaj = user.tajweed_rule
 
     userObj = {
         "username": user.username,
@@ -436,17 +538,33 @@ def update_practice():
     for i in allTaj:
         allTajObj = {
         "code" : i.code,
-        "last_practice": i.last_practice,
         "practice_ayah_count": i.practice_ayah_count,
-        "last_test": i.last_test,
         "test_ayah_count": i.test_ayah_count,
-        "test_score_correct": i.test_score_correct,
-        "test_out_of_count": i.test_out_of_count,
-        "test_score_composite": i.test_score_composite
+        "total_correct": i.total_correct,
+        "total_out_of": i.total_out_of
         }
-        
 
+        practice = []
+
+        for r in i.practice:
+            p_stats = {
+                'practice_date': r.practice_date,
+                'ayah_count': r.ayah_count
+            }
+            
+            # practice.append(p_stats)  
+            practice.insert(0, p_stats)  
+            
+        allTajObj['practice'] = practice  
+        test = [p['test'] for p in session['tajweed'] if p['code'] == stats['rule']]
+        
+        for t in test:
+            allTajObj['test'] = t
+
+        
         allTajArr.append(allTajObj)
+    
+    session['tajweed'] = allTajArr
 
     return (jsonify(userObj=userObj, allTajArr=allTajArr), 200)
 
@@ -461,28 +579,18 @@ def update_test():
     user = User.query.filter_by(username=username).first()
     user_rule = [c for c in user.tajweed_rule if c.code == stats['rule']]
     
-    if len(user_rule) == 0:
-        tajweed = TajweedRules(code=stats['rule'], name=stats['rule'], last_test=db.func.now(), test_ayah_count=stats['ayah_count'], test_score_correct=stats['correct'], test_out_of_count=stats['out_of'], test_score_composite=stats['score'], total_correct=stats['correct'], total_out_of=stats['out_of'])
-        
-        db.session.add(tajweed)
-        db.session.commit()
+    test = Test(test_date=db.func.current_date(), test_ayah_count=stats['ayah_count'], test_score_correct=stats['correct'], test_out_of_count=stats['out_of'], test_score_composite=stats['score'], rule_id=user_rule[0].id)
 
-        user_tajweed = UserTajweedStats(user_id=user.id, rule_code=stats['rule'])
-        db.session.add(user_tajweed)
-            
-    else:
-        user_rule[0].last_test = db.func.now()
-        user_rule[0].test_ayah_count = user_rule[0].test_ayah_count + stats['ayah_count']
-        user_rule[0].test_score_correct = stats['correct']
-        user_rule[0].test_out_of_count = stats['out_of']
-        user_rule[0].test_score_composite = stats['score']
-        user_rule[0].total_correct = user_rule[0].total_correct + stats['correct']
-        user_rule[0].total_out_of = user_rule[0].total_out_of + stats['out_of']
+    db.session.add(test)
+    db.session.commit()  
 
+    user_rule[0].test_ayah_count = user_rule[0].test_ayah_count + stats['ayah_count']
+    user_rule[0].total_correct = user_rule[0].total_correct + stats['correct']
+    user_rule[0].total_out_of = user_rule[0].total_out_of + stats['out_of']
 
     db.session.commit()
 
-    allTaj = TajweedRules.query.filter(UserTajweedStats.user_id==user.id).all()
+    allTaj = user.tajweed_rule
 
     userObj = {
         "username": user.username,
@@ -493,19 +601,37 @@ def update_test():
     for i in allTaj:
         allTajObj = {
         "code" : i.code,
-        "last_practice": i.last_practice,
         "practice_ayah_count": i.practice_ayah_count,
-        "last_test": i.last_test,
         "test_ayah_count": i.test_ayah_count,
-        "test_score_correct": i.test_score_correct,
-        "test_out_of_count": i.test_out_of_count,
-        "test_score_composite": i.test_score_composite,
         "total_correct": i.total_correct,
         "total_out_of": i.total_out_of
         }
-        
 
+        test = []
+
+        for t in i.test:
+            t_stats = {
+                'test_date': t.test_date,
+                'test_ayah_count': t.test_ayah_count,
+                'test_score_correct': t.test_score_correct,
+                'test_out_of_count': t.test_out_of_count,
+                'test_score_composite': t.test_score_composite
+            }
+
+            # test.append(t_stats)  
+            test.insert(0, t_stats)
+
+        allTajObj['test'] = test
+        
+        practice = [p['practice'] for p in session['tajweed'] if p['code'] == stats['rule']]
+        
+        for p in practice:
+            allTajObj['practice'] = p
+
+    
         allTajArr.append(allTajObj)
+
+    session["tajweed"] = allTajArr
 
     return (jsonify(userObj=userObj, allTajArr=allTajArr), 200)
 
