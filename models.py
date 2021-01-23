@@ -30,8 +30,8 @@ class User(db.Model):
     last_name = db.Column(db.String(30),
                         nullable=False)
     last_login = db.Column(db.DateTime, 
-                        server_default=db.func.current_date(), 
-                        server_onupdate=db.func.current_date())
+                        server_default=db.func.now(), 
+                        server_onupdate=db.func.now())
 
     tajweed_rule = db.relationship('TajweedRules', secondary="user_tajweed_stats", backref='user')
 
@@ -62,7 +62,7 @@ class User(db.Model):
         u = User.query.filter_by(username=username).first()
 
         if u and Bcrypt.check_password_hash(cls, u.password, password):
-            u.last_login = db.func.current_date()
+            u.last_login = db.func.now()
 
             db.session.add(u)
 

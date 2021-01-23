@@ -518,7 +518,8 @@ def update_practice():
     user = User.query.filter_by(username=username).first()
     user_rule = [c for c in user.tajweed_rule if c.code == stats['rule']]
     
-    practice = Practice(practice_date=db.func.current_date(), ayah_count=stats['ayah_count'], rule_id=user_rule[0].id)
+    
+    practice = Practice(practice_date=db.func.now(), ayah_count=stats['ayah_count'], rule_id=user_rule[0].id)
 
     db.session.add(practice)
     db.session.commit()  
@@ -556,7 +557,8 @@ def update_practice():
             practice.insert(0, p_stats)  
             
         allTajObj['practice'] = practice  
-        test = [p['test'] for p in session['tajweed'] if p['code'] == stats['rule']]
+
+        test = [p['test'] for p in session['tajweed'] if p['code'] == i.code]
         
         for t in test:
             allTajObj['test'] = t
@@ -579,7 +581,7 @@ def update_test():
     user = User.query.filter_by(username=username).first()
     user_rule = [c for c in user.tajweed_rule if c.code == stats['rule']]
     
-    test = Test(test_date=db.func.current_date(), test_ayah_count=stats['ayah_count'], test_score_correct=stats['correct'], test_out_of_count=stats['out_of'], test_score_composite=stats['score'], rule_id=user_rule[0].id)
+    test = Test(test_date=db.func.now(), test_ayah_count=stats['ayah_count'], test_score_correct=stats['correct'], test_out_of_count=stats['out_of'], test_score_composite=stats['score'], rule_id=user_rule[0].id)
 
     db.session.add(test)
     db.session.commit()  
@@ -621,9 +623,9 @@ def update_test():
             # test.append(t_stats)  
             test.insert(0, t_stats)
 
-        allTajObj['test'] = test
-        
-        practice = [p['practice'] for p in session['tajweed'] if p['code'] == stats['rule']]
+        allTajObj['test'] = test  
+
+        practice = [p['practice'] for p in session['tajweed'] if p['code'] == i.code]
         
         for p in practice:
             allTajObj['practice'] = p
