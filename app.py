@@ -299,7 +299,7 @@ def generate_ayat():
 
 @app.route("/api/auth", methods=["POST"])
 def auth():
-    print('firing auth', session)
+    print('firing auth')
 
     userData = request.json["data"]
     mode = request.json["mode"]
@@ -476,7 +476,7 @@ def auth():
 
 @app.route('/api/verify_auth')
 def verify_auth():
-    print('in verify_auth', session)
+    print('in verify_auth')
     if "isAuthenticated" in session:
         isAuthenticated = True
         saved_user = session["user"]
@@ -485,7 +485,8 @@ def verify_auth():
         user = {
             "username": saved_user["username"],
             "firstName": saved_user["first_name"],
-            "lastName": saved_user["last_name"]
+            "lastName": saved_user["last_name"],
+            "email": saved_user["email"]
         }
 
             
@@ -500,7 +501,7 @@ def verify_auth():
 
 @app.route('/api/logout')
 def logout():
-    print('in logout', session)
+    print('in logout')
     session.pop('isAuthenticated', None)
     session.pop('user', None)
     session.pop('tajweed', None)
@@ -533,7 +534,8 @@ def update_practice():
     userObj = {
         "username": user.username,
         "firstName": user.first_name,
-        "lastName": user.last_name
+        "lastName": user.last_name,
+        "email": user.email
     }
 
     for i in allTaj:
@@ -597,7 +599,8 @@ def update_test():
     userObj = {
         "username": user.username,
         "firstName": user.first_name,
-        "lastName": user.last_name
+        "lastName": user.last_name,
+        "email": user.email
     }
 
     for i in allTaj:
