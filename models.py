@@ -33,7 +33,7 @@ class User(db.Model):
                         server_default=db.func.now(), 
                         server_onupdate=db.func.now())
 
-    tajweed_rule = db.relationship('TajweedRules', secondary="user_tajweed_stats", backref='user')
+    tajweed_rule = db.relationship('TajweedRules', secondary="user_tajweed_stats", backref='user', cascade="all,delete")
 
     # start_register
     @classmethod
@@ -73,6 +73,49 @@ class User(db.Model):
             return False
     # end_authenticate    
 
+    @classmethod
+    def reset_pass(cls, username, current_password, new_password):
+        """Register user w/hashed password & return user."""
+
+        u = User.query.filter_by(username=username).first()
+
+        if u and Bcrypt.check_password_hash(cls, u.password, current_password):
+            hashed = Bcrypt.generate_password_hash(cls, new_password, 14)
+                # turn bytestring into normal (unicode utf8) string
+            hashed_utf8 = hashed.decode("utf8")
+
+            u.password = hashed_utf8
+
+            db.session.add(u)
+
+            db.session.commit()
+                # return user instance
+            return u
+        else:
+            return False
+
+
+    @classmethod
+    def delete_user(cls, username, password):
+        """Register user w/hashed password & return user."""
+
+        u = User.query.filter_by(username=username).first()
+
+        userStats = u.tajweed_rule
+
+        if u and Bcrypt.check_password_hash(cls, u.password, password):
+            for rule in userStats:
+                deletedStat = TajweedRules.query.filter_by(id=rule.id).delete()
+
+            deleted =  User.query.filter_by(username=username).delete()
+         
+            db.session.commit()
+            print('##########################################deleted', deleted)
+
+            
+            return 'deleted'
+        else:
+            return False
 
 class TajweedRules(db.Model):
     """Tajweed Rules."""
@@ -83,11 +126,11 @@ class TajweedRules(db.Model):
                     primary_key=True)
     code = db.Column(db.Text, 
                     nullable=False)
-    practice = db.relationship('Practice', backref='tajweed_rules')
+    practice = db.relationship('Practice', backref='tajweed_rules', cascade="all,delete")
     practice_ayah_count = db.Column(db.Integer,
                     nullable=False,
                     default=0)
-    test = db.relationship('Test', backref='tajweed_rules')
+    test = db.relationship('Test', backref='tajweed_rules', cascade="all,delete")
     test_ayah_count = db.Column(db.Integer,
                     nullable=False,
                     default=0)
@@ -97,9 +140,9 @@ class TajweedRules(db.Model):
     total_out_of = db.Column(db.Integer,
                     nullable=False,
                     default=0)
+
     
-    
-    user_rule = db.relationship('User', secondary="user_tajweed_stats", backref='tajweed_rules')
+    user_rule = db.relationship('User', secondary="user_tajweed_stats", backref='tajweed_rules', cascade="all,delete")
 
 
 
@@ -109,8 +152,8 @@ class UserTajweedStats(db.Model):
     __tablename__ = "user_tajweed_stats"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    rule_id = db.Column(db.Integer, db.ForeignKey('tajweed_rules.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete="cascade"))
+    rule_id = db.Column(db.Integer, db.ForeignKey('tajweed_rules.id', ondelete="cascade"))
 
 
       
@@ -125,7 +168,8 @@ class Practice(db.Model):
                 nullable=False)
     ayah_count = db.Column(db.Integer,
                 nullable=False)
-    rule_id = db.Column(db.Integer, db.ForeignKey('tajweed_rules.id'))
+    rule_id = db.Column(db.Integer, db.ForeignKey('tajweed_rules.id', ondelete="cascade"))
+    user = db.Column(db.Integer, db.ForeignKey('users.id', ondelete="cascade"))
 
 class Test(db.Model):
     """Test Stats"""
@@ -147,4 +191,5 @@ class Test(db.Model):
     test_score_composite = db.Column(db.Text,
                         nullable=False,
                         default='0/0')
-    rule_id = db.Column(db.Integer, db.ForeignKey('tajweed_rules.id'))                    
+    rule_id = db.Column(db.Integer, db.ForeignKey('tajweed_rules.id', ondelete="cascade"))                    
+    user = db.Column(db.Integer, db.ForeignKey('users.id', ondelete="cascade"))

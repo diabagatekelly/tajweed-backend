@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from sqlalchemy.exc import IntegrityError
 from models import db, connect_db, User, TajweedRules, UserTajweedStats, Practice, Test
 import os
+from flask_bcrypt import Bcrypt
 
 # import "../Tajweed Apis/tajweed.ghunnah.json"
 
@@ -310,8 +311,8 @@ def auth():
     if mode == 'register':
         try:
             user = User.register(
-                first_name = userData["firstName"], 
-                last_name = userData["lastName"], 
+                first_name = userData["first_name"], 
+                last_name = userData["last_name"], 
                 email = userData["email"], 
                 username = userData["username"], 
                 password = userData["password"])
@@ -484,8 +485,8 @@ def verify_auth():
         
         user = {
             "username": saved_user["username"],
-            "firstName": saved_user["first_name"],
-            "lastName": saved_user["last_name"],
+            "first_name": saved_user["first_name"],
+            "last_name": saved_user["last_name"],
             "email": saved_user["email"]
         }
 
@@ -518,9 +519,11 @@ def update_practice():
 
     user = User.query.filter_by(username=username).first()
     user_rule = [c for c in user.tajweed_rule if c.code == stats['rule']]
+
+    print(user)
     
     
-    practice = Practice(practice_date=db.func.now(), ayah_count=stats['ayah_count'], rule_id=user_rule[0].id)
+    practice = Practice(practice_date=db.func.now(), ayah_count=stats['ayah_count'], rule_id=user_rule[0].id, user=user.id)
 
     db.session.add(practice)
     db.session.commit()  
@@ -533,8 +536,8 @@ def update_practice():
 
     userObj = {
         "username": user.username,
-        "firstName": user.first_name,
-        "lastName": user.last_name,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
         "email": user.email
     }
 
@@ -583,7 +586,7 @@ def update_test():
     user = User.query.filter_by(username=username).first()
     user_rule = [c for c in user.tajweed_rule if c.code == stats['rule']]
     
-    test = Test(test_date=db.func.now(), test_ayah_count=stats['ayah_count'], test_score_correct=stats['correct'], test_out_of_count=stats['out_of'], test_score_composite=stats['score'], rule_id=user_rule[0].id)
+    test = Test(test_date=db.func.now(), test_ayah_count=stats['ayah_count'], test_score_correct=stats['correct'], test_out_of_count=stats['out_of'], test_score_composite=stats['score'], rule_id=user_rule[0].id, user=user.id)
 
     db.session.add(test)
     db.session.commit()  
@@ -598,8 +601,8 @@ def update_test():
 
     userObj = {
         "username": user.username,
-        "firstName": user.first_name,
-        "lastName": user.last_name,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
         "email": user.email
     }
 
@@ -633,7 +636,6 @@ def update_test():
         for p in practice:
             allTajObj['practice'] = p
 
-    
         allTajArr.append(allTajObj)
 
     session["tajweed"] = allTajArr
@@ -641,7 +643,54 @@ def update_test():
     return (jsonify(userObj=userObj, allTajArr=allTajArr), 200)
 
   
-    
+@app.route('/api/update_user', methods=['POST'])
+def update_user():
+    userData = request.json["user"]
+    currUser = session["user"]
+
+    user = User.query.filter_by(username=userData['username']).first()
+
+    if (currUser["username"] == userData["username"]):
+        user.first_name = userData["first_name"]
+        user.last_name = userData["last_name"]
+        user.email = userData["email"]
+
+        db.session.add(user)
+        db.session.commit()
+
+        session["user"] = userData
+
+    return (jsonify(user=userData), 200)
+
+@app.route('/api/reset_password', methods=['POST'])
+def reset_password():
+    userPassword = request.json["data"]
+    print(userPassword)
+  
+    new_pass = User.reset_pass(username=userPassword["username"], current_password=userPassword["current"], new_password=userPassword['new'])
+
+    print(new_pass)
+
+    return (jsonify(response='success'), 200)
+
+@app.route('/api/delete_user', methods=['POST'])
+def delete_user():
+    data = request.json["data"]
+    currUser = session['user']
+
+    if data['username'] == currUser['username']:
+        deleteStat = User.delete_user(username=data['username'], password=data['password'])
+
+        if deleteStat != False:
+            session.pop('isAuthenticated', None)
+            session.pop('user', None)
+            session.pop('tajweed', None)
+            isAuthenticated = False
+            return (jsonify(response='deleted', isAuthenticated=isAuthenticated), 200)
+        else:
+            return (jsonify(response='failed'), 200)
+
+
 
 
 
