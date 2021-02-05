@@ -9,13 +9,33 @@
 </div> -->
 
 <div id="ayat">
-    {{test_ayat}}
+    {% for x in idhaar_shafawi%}
+    {{x}}
+    {% endfor %}
 </div>
 
-<div id="rule">
+<div>
+    <ul>
+        {% for item in total %}
+        <li>{{ item.line }}, {{item.idx[0]}}, 
+            
+            {% if item.idx|length != 0 %}
+            {{item.idx[0] | int + 1}} 
+            {{item.line[item.idx[0]] + item.line[item.idx[0] | int + 1] + item.line[item.idx[0] | int + 2] + item.line[item.idx[0] | int + 3]}}
+            {%endif%}
+        
+        </li>
+    
+     {% endfor %}
+    </ul>
+</div>
+
+
+
+<!-- <div id="rule">
     {{rule}}
 </div>
 <div id="targetDiv">
-</div>
+</div> -->
 
 {% endblock %}

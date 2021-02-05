@@ -124,24 +124,167 @@ def hamzatWasl():
         json.dump(data, outfile) 
     return ( jsonify(data), 200 )
 
+@app.route('/')
+def start():
+    return render_template('home.html')
 
 
-@app.route("/")
+@app.route("/idhaar")
 def home():
     print('loading home', session)
     text = ''
+    total = []
+    idhaar = []
+    idhaarMap = {}
+
     f = open(r'C:\Users\kelly\Documents\Development Related\Portfolio Projects\islamic ed suite (angular + python + sql)\Tajweed app python backend\quran-uthmani.txt', encoding='utf-8')
-    text = f.read()
+    for line in f:
+        nline = line.split('|')
+        surah = int(nline[0])
+        ayah = int(nline[1])
+        text = nline[2].strip()
+    
+        x = [j for j, ltr in enumerate(text) if ltr == 'ن' and j < len(text)-1 and text[j+1] == "ْ"]
 
-    portion = '1|1|'
+        if len(x) > 0:
+            idx = int(x[0])
+            print(idx)
+            
+            if idx+2 < len(text)-1 and text[idx+2] == " ":
+                idx = idx + 3
+                print(idx, text[idx])
 
-    if portion in text:
-        ayat = portion
-        return render_template('home.html', text = text, portion = portion)
-    else:
-        portion = 'NOne'
-        return render_template("home.html", text=text, portion=portion)
+                if text[idx] in 'هءأإحعخغ':
+                    ayahMap = {}
+                    ayahMap["surah"] = surah
+                    ayahMap["ayah"] = ayah
+                    ayahMap['end'] = idx
+                    ayahMap['start'] = idx-3
+                   
+                    print(ayahMap)
 
+                    idhaar.append(ayahMap)
+
+            elif idx+2 < len(text)-1 and text[idx+2] != " ":
+                idx = idx + 2
+
+                print(idx, text[idx])
+                if text[idx] in 'هءأإحعخغ':
+                    ayahMap = {}
+                    ayahMap["surah"] = surah
+                    ayahMap["ayah"] = ayah
+                    ayahMap['end'] = idx
+                    ayahMap['start'] = idx-2
+
+                    print(ayahMap)
+
+                    idhaar.append(ayahMap)
+
+        z = [j for j, ltr in enumerate(text) if ltr in 'ٌٍ' and j < len(text)-1]
+
+        if len(z) > 0:
+            idx = int(z[0])
+            base = idx-1       
+
+            print(text[idx])     
+            print(text[base])
+
+            if idx+2 < len(text)-1 and text[idx+2] in 'هءأإحعخغ':
+                ayahMap = {}
+                ayahMap["surah"] = surah
+                ayahMap["ayah"] = ayah
+                ayahMap['end'] = idx+2
+                ayahMap['start'] = base
+
+                print(ayahMap)
+
+                idhaar.append(ayahMap)
+
+        y = [j for j, ltr in enumerate(text) if ltr in 'ً' and j < len(text)-1]
+
+        if len(y) > 0:
+            idx = int(y[0])
+            base = idx-1       
+
+            print(text[idx])     
+            print(text[base])
+
+            if idx+3 < len(text)-1 and text[idx+3] in 'هءأإحعخغ':
+                ayahMap = {}
+                ayahMap["surah"] = surah
+                ayahMap["ayah"] = ayah
+                ayahMap['end'] = idx+3
+                ayahMap['start'] = base
+
+                print(ayahMap)
+
+                idhaar.append(ayahMap)
+
+    idhaarMap["idhaar"] = idhaar    
+
+    with open("Tajweed Apis/tajweed.idhaar.json", "w") as outfile:
+        json.dump(idhaarMap, outfile)     
+
+    return render_template('pypi.html', text=text, idhaar=idhaar)
+
+
+@app.route("/idhaar_sh")
+def home2():
+    print('loading home', session)
+    text = ''
+    idhaar_shafawi = []
+    idhaarShafawiMap = {}
+    f = open(r'C:\Users\kelly\Documents\Development Related\Portfolio Projects\islamic ed suite (angular + python + sql)\Tajweed app python backend\quran-uthmani.txt', encoding='utf-8')
+    for line in f:
+        nline = line.split('|')
+        surah = int(nline[0])
+        ayah = int(nline[1])
+        text = nline[2].strip()
+
+        
+        x = [j for j, ltr in enumerate(text) if ltr == 'م' and j < len(text)-1 and text[j+1] == "ْ"]
+
+        if len(x) > 0:
+            idx = int(x[0])
+            print(idx)
+            
+            if idx+2 < len(text)-1 and text[idx+2] == " ":
+                idx = idx + 3
+                print(idx, text[idx])
+
+                if text[idx] not in 'مب':
+                    ayahMap = {}
+                    ayahMap["surah"] = surah
+                    ayahMap["ayah"] = ayah
+                    ayahMap['end'] = idx
+                    ayahMap['start'] = idx-3
+                   
+                    print(ayahMap)
+
+                    idhaar_shafawi.append(ayahMap)
+
+            elif idx+2 < len(text)-1 and text[idx+2] != " ":
+                idx = idx + 2
+
+                print(idx, text[idx])
+                if text[idx] not in 'مب':
+                    ayahMap = {}
+                    ayahMap["surah"] = surah
+                    ayahMap["ayah"] = ayah
+                    ayahMap['end'] = idx
+                    ayahMap['start'] = idx-2
+
+                    print(ayahMap)
+
+                    idhaar_shafawi.append(ayahMap)
+
+    idhaarShafawiMap["idhaar_shafawi"] = idhaar_shafawi    
+
+    with open("Tajweed Apis/tajweed.idhaar_shafawi.json", "w") as outfile:
+        json.dump(idhaarShafawiMap, outfile)   
+
+    return render_template('pypi.html', text=text, idhaar_shafawi=idhaar_shafawi)
+    
 
 # @app.route("/pypi")
 # def pypi_func():
