@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from sqlalchemy.exc import IntegrityError
 from models import db, connect_db, User, TajweedRules, UserTajweedStats, Practice, Test
 import os
+import glob
 from flask_bcrypt import Bcrypt
 
 # import "../Tajweed Apis/tajweed.ghunnah.json"
@@ -30,12 +31,12 @@ wordDict = Counter()
 tajweedJSON = {}
 idghaamNoGhunnahJSON = {}
 
-Rules = ["ghunnah", "hamzatWasl", "idghaamGhunnah", "idghaamNoGhunnah", "ikhfa", "iqlab", "madd", "madd246", "qalqalah"]
+Rules = ["ghunnah", "idghaam_ghunnah", "idghaam_no_ghunnah", "idghaam_mutajanisayn", "idghaam_mutaqaribayn", "idghaam_shafawi", "ikhfa", "ikhfa_shafawi", "idhaar", "idhaar_shafawi", "iqlab", "madd_246", "madd_muttasil", "madd_munfasil", "madd_6", "qalqalah"]
 
 # Get Original JSON File
 @app.before_request
 def fetch_tajweed():
-    with open("Tajweed Apis/tajweed.hafs.uthmani-pause-sajdah.json") as jsonFile:
+    with open("Tajweed Apis2/tajweed.hafs.uthmani-pause-sajdah.json") as jsonFile:
         jsonObject = json.load(jsonFile)
         tajweedJSON["data"] = jsonObject
         jsonFile.close()
@@ -47,12 +48,37 @@ def tajweed():
 
 
 # My JSON Files' Builder Routes
-@app.route("/write_ghunnah", methods=["POST"])
-def ghunnah():
-    data = request.json["data"]
-    with open("Tajweed Apis/tajweed.ghunnah.json", "w") as outfile:
-        json.dump(data, outfile) 
-    return ( jsonify(data), 200 )
+# @app.route("/write_ghunnah", methods=["POST"])
+# def ghunnah():
+#     data = request.json["data"]
+#     with open("Tajweed Apis/tajweed.ghunnah.json", "w") as outfile:
+#         json.dump(data, outfile) 
+#     return ( jsonify(data), 200 )
+
+@app.route("/write_api")
+def write_api():
+    data = tajweedJSON["data"]
+
+    rule_files = glob.glob("Tajweed Apis/tajweed.*.json")
+    for start_file in rule_files:
+        rule_name = os.path.basename(start_file).split(".")[1]
+        map = {}
+        map[rule_name] = []
+        for obj in data:
+            for i in obj["annotations"]:
+                if i["rule"] == rule_name:
+                    ruleMap = {}
+                    ruleMap["ayah"] = obj["ayah"]
+                    ruleMap["surah"] = obj["surah"]
+                    ruleMap["start"] = i["start"]
+                    ruleMap["end"] = i["end"]
+                    
+                    map[rule_name].append(ruleMap)
+                    
+        with open(f"Tajweed Apis/tajweed.{rule_name}.json", "w") as outfile:
+            json.dump(map, outfile) 
+
+    return render_template('blank.html')
 
 @app.route("/write_idghaamGhunnah", methods=["POST"])
 def idghaamGhunnah():
@@ -305,47 +331,48 @@ def home2():
 #     return render_template("pypi.html", test_ayat=test_ayat, rule=rule)
 
 
-# @app.route("/analysis", methods=["POST"])
-# def dataAnalysis():
-#     rule = request.json["ruleChosen"]
+@app.route("/analysis", methods=["POST"])
+def dataAnalysis():
+    rule = request.json["ruleChosen"]
 
-#     ruleDetails = Tajweed.Select_dict_path(rule)
-#     surahData = {}
+    ruleDetails = Tajweed.Select_dict_path(rule)
+    surahData = {}
 
-#     for n in range(1, 115):
-#         occ = sum(item['surah'] == n for item in ruleDetails)
-#         surahData[n] = occ
+    for n in range(1, 115):
+        occ = sum(item['surah'] == n for item in ruleDetails[0])
+        print(occ)
+        surahData[n] = occ
     
-#     Tajweed.Analysis_path({f"{rule}": surahData})
+    Tajweed.Analysis_path({f"{rule}": surahData})
     
+    return (jsonify(rule=rule, surahData=surahData))
 
-#     return (jsonify(rule=rule, surahData=surahData))
-
-# @app.route("/view-graphs", methods=["GET", "POST"])
-# def viewGraphs():
-#     rule = request.form.get('selectedRule')
-#     sortedRule={}
+@app.route("/view-graphs", methods=["GET", "POST"])
+def viewGraphs():
+    rule = request.form.get('selectedRule')
+    print(rule)
+    sortedRule={}
    
-#     if rule != None:
-#         with open("Tajweed Apis/analysis.json") as jsonFile:
-#             jsonObject = json.load(jsonFile)
-#             jsonFile.close()
-#             sortedRule = jsonObject[rule]
-#     # plt.bar(*zip(*ruleData.items()))
+    if rule != None:
+        with open("Tajweed Apis/analysis.json") as jsonFile:
+            jsonObject = json.load(jsonFile)
+            jsonFile.close()
+            sortedRule = jsonObject[rule]
+    # plt.bar(*zip(*ruleData.items()))
 
-#             fig = plt.figure()
+            fig = plt.figure()
 
-#             plt.bar(range(len(sortedRule)), list(sortedRule.values()), align='center')
-#             plt.xticks(range(len(sortedRule)), list(sortedRule.keys()))
-#             plt.locator_params(axis='x', nbins=20)
+            plt.bar(range(len(sortedRule)), list(sortedRule.values()), align='center')
+            plt.xticks(range(len(sortedRule)), list(sortedRule.keys()))
+            plt.locator_params(axis='x', nbins=20)
 
-#             fig.suptitle(f"{rule}", fontsize=20)
-#             plt.xlabel('Surah #', fontsize=14)
-#             plt.ylabel('# of rules', fontsize=14)
+            fig.suptitle(f"{rule}", fontsize=20)
+            plt.xlabel('Surah #', fontsize=14)
+            plt.ylabel('# of rules', fontsize=14)
 
 
-#             plt.show()
-#     return render_template("output.html", rule=rule, sortedRule=sortedRule)
+            plt.show()
+    return render_template("output.html", rule=rule, sortedRule=sortedRule)
 
 
 @app.route("/api/get_explanation", methods=["POST"])
@@ -373,69 +400,71 @@ def generate_ayat():
     ayatRange = int(request.json["range"])
     ayat = []
 
-    if rule != "idghaamNoGhunnah" and rule != "iqlab" and activity != "learn":
-        surahNumber = random.randint(beg, end)
+    # if rule != "idghaam_no_ghunnah" and rule != "iqlab" and rule != "idghaam_mutaqaribayn" and rule != "idghaam_mutajanisayn" and rule != 'idghaam_shafawi' and rule != 'ghunnah' and activity != "learn":
+    #     surahNumber = random.randint(beg, end)
 
-        fullSurah = q.quran.get_sura(surahNumber, with_tashkeel=False)
+    #     fullSurah = q.quran.get_sura(surahNumber, with_tashkeel=False)
 
-        while len(fullSurah) < ayatRange:
-            surahNumber = random.randint(beg, end)
-            fullSurah = q.quran.get_sura(surahNumber, with_tashkeel=True)
+    #     while len(fullSurah) < ayatRange:
+    #         surahNumber = random.randint(beg, end)
+    #         fullSurah = q.quran.get_sura(surahNumber, with_tashkeel=True)
 
-        if len(fullSurah) > ayatRange:
-            firstAyat = random.randint(1, (len(fullSurah) - ayatRange))
+    #     if len(fullSurah) > ayatRange:
+    #         firstAyat = random.randint(1, (len(fullSurah) - ayatRange))
 
-            surahName = q.quran.get_sura_name(surahNumber)
-            for n in range(firstAyat, firstAyat+ayatRange):   
-                target = [line for line in text if f"{surahNumber}|{n}|" in line]
-                lineArr = target[0].split('|')
-                test_ayat = lineArr[2]
+    #         surahName = q.quran.get_sura_name(surahNumber)
+    #         for n in range(firstAyat, firstAyat+ayatRange):   
+    #             target = [line for line in text if f"{surahNumber}|{n}|" in line]
+    #             lineArr = target[0].split('|')
+    #             test_ayat = lineArr[2]
 
-                ayatData = {
-                    "test_ayat" : test_ayat
-                }
-                ruleMarker = []
-                for item in ruleDetails:
-                    if item["surah"] == surahNumber and item["ayah"] == n:
-                        ruleMarker.append(item)
+    #             ayatData = {
+    #                 "test_ayat" : test_ayat
+    #             }
+    #             ruleMarker = []
+    #             for item in ruleDetails:
+    #                 if item["surah"] == surahNumber and item["ayah"] == n:
+    #                     ruleMarker.append(item)
 
-                ayatData["rule"] = ruleMarker
-                ayatData["surahNumber"] = surahNumber
-                ayatData["ayahNumber"] = n
+    #             ayatData["rule"] = ruleMarker
+    #             ayatData["surahNumber"] = surahNumber
+    #             ayatData["ayahNumber"] = n
                 
-                ayat.append(ayatData)
+    #             ayat.append(ayatData)
     
-    elif activity == "learn" or rule == "idghaamNoGhunnah" or rule == "iqlab": 
-        firstAyat = random.randint(1, (len(ruleDetails) - ayatRange))
+    # elif activity == "learn" or rule == "idghaam_no_ghunnah" or rule == "iqlab" or rule == "idghaam_mutaqaribayn" or rule == "idghaam_mutajanisayn" or rule == 'idghaam_shafawi' or rule == 'ghunnah': 
+    firstAyat = random.randint(1, (len(ruleDetails) - ayatRange))
 
-        while len(ayat) < ayatRange:
-            surahNumber = ruleDetails[firstAyat]["surah"]
-            surahName = q.quran.get_sura_name(surahNumber)
-            ayatNumber = ruleDetails[firstAyat]["ayah"]
-            target = [line for line in text if f"{surahNumber}|{ayatNumber}|" in line]
-            lineArr = target[0].split('|')
-            test_ayat = lineArr[2]
+    while len(ayat) < ayatRange:
+        surahNumber = ruleDetails[firstAyat]["surah"]
+        # surahNumber = 3
+        surahName = q.quran.get_sura_name(surahNumber)
+        ayatNumber = ruleDetails[firstAyat]["ayah"]
+        # ayatNumber = 7
+        target = [line for line in text if f"{surahNumber}|{ayatNumber}|" in line]
+        lineArr = target[0].split('|')
+        test_ayat = lineArr[2]
 
-            ayatData = {
-                "test_ayat" : test_ayat
-            }
+        ayatData = {
+            "test_ayat" : test_ayat
+        }
 
-            ruleMarker = []
-            for item in ruleDetails:
-                if item["surah"] == surahNumber and item["ayah"] == ayatNumber:
-                    ruleMarker.append(item)
+        ruleMarker = []
+        for item in ruleDetails:
+            if item["surah"] == surahNumber and item["ayah"] == ayatNumber:
+                ruleMarker.append(item)
 
-            ayatData["rule"] = ruleMarker
-            ayatData["surahNumber"] = surahNumber
-            ayatData["ayahNumber"] = ayatNumber
+        ayatData["rule"] = ruleMarker
+        ayatData["surahNumber"] = surahNumber
+        ayatData["ayahNumber"] = ayatNumber
 
-            ayat.append(ayatData)
+        ayat.append(ayatData)
 
-            firstAyat = firstAyat + 1
+        firstAyat = firstAyat + 1
 
-            if ruleDetails[firstAyat]["surah"] == surahNumber:
-                while ruleDetails[firstAyat]["ayah"] == ayatNumber:
-                    firstAyat = firstAyat + 1
+        if ruleDetails[firstAyat]["surah"] == surahNumber:
+            while ruleDetails[firstAyat]["ayah"] == ayatNumber:
+                firstAyat = firstAyat + 1
 
     return ( jsonify(rule=rule, ayatRange=ayatRange, ayat=ayat), 200 )
 
@@ -457,7 +486,7 @@ def auth():
                 first_name = userData["first_name"], 
                 last_name = userData["last_name"], 
                 email = userData["email"], 
-                username = userData["username"], 
+                username = userData["username"],
                 password = userData["password"])
 
             db.session.commit()
