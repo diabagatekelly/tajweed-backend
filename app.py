@@ -437,10 +437,10 @@ def generate_ayat():
 
     while len(ayat) < ayatRange:
         surahNumber = ruleDetails[firstAyat]["surah"]
-        # surahNumber = 3
+        # surahNumber = 16
         surahName = q.quran.get_sura_name(surahNumber)
         ayatNumber = ruleDetails[firstAyat]["ayah"]
-        # ayatNumber = 7
+        # ayatNumber = 2
         target = [line for line in text if f"{surahNumber}|{ayatNumber}|" in line]
         lineArr = target[0].split('|')
         test_ayat = lineArr[2]
