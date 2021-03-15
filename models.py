@@ -19,7 +19,8 @@ class User(db.Model):
                         primary_key=True,
                         autoincrement=True)
     username = db.Column(db.String(20), 
-                        nullable=False)
+                        nullable=False, 
+                        unique=True)
     password = db.Column(db.Text, 
                         nullable=False)
     email = db.Column(db.String(50),
@@ -29,15 +30,19 @@ class User(db.Model):
                         nullable=False)
     last_name = db.Column(db.String(30),
                         nullable=False)
+    account_type = db.Column(db.String(30),
+                        nullable=False)
     last_login = db.Column(db.DateTime, 
                         server_default=db.func.now(), 
                         server_onupdate=db.func.now())
 
     tajweed_rule = db.relationship('TajweedRules', secondary="user_tajweed_stats", backref='user', cascade="all,delete")
 
+    students = db.relationship('Student', backref='users', cascade="all,delete")
+
     # start_register
     @classmethod
-    def register(cls, first_name, last_name, email, username, password):
+    def register(cls, first_name, last_name, email, username, password, account_type):
         """Register user w/hashed password & return user."""
 
         hashed = Bcrypt.generate_password_hash(cls, password, 14)
@@ -45,7 +50,7 @@ class User(db.Model):
         hashed_utf8 = hashed.decode("utf8")
 
         # return instance of user w/username and hashed pwd
-        user = User(first_name=first_name, last_name=last_name, email=email, username=username, password=hashed_utf8)
+        user = User(first_name=first_name, last_name=last_name, email=email, username=username, password=hashed_utf8, account_type=account_type)
         db.session.add(user)
 
         return user
@@ -193,3 +198,19 @@ class Test(db.Model):
                         default='0/0')
     rule_id = db.Column(db.Integer, db.ForeignKey('tajweed_rules.id', ondelete="cascade"))                    
     user = db.Column(db.Integer, db.ForeignKey('users.id', ondelete="cascade"))
+
+class Student(db.Model):
+    """Student Info"""
+
+    __tablename__= "student"
+
+    student_username = db.Column(db.String(20), 
+                        primary_key=True,
+                        nullable=False)
+    student_email = db.Column(db.String(50),
+                        nullable=False)
+    student_firstName = db.Column(db.String(30),
+                        nullable=False)
+    student_lastName = db.Column(db.String(30),
+                        nullable=False)
+    teacher = db.Column(db.String(20), db.ForeignKey('users.username', ondelete="cascade"))
