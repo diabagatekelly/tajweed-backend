@@ -8,7 +8,7 @@ import random
 from tajweed import Tajweed
 import matplotlib.pyplot as plt
 from sqlalchemy.exc import IntegrityError
-from models import db, connect_db, User, TajweedRules, UserTajweedStats, Practice, Test, Student
+from models import db, connect_db, User, TajweedRules, Practice, Test, Student, UserWork, UserWorkStats
 import os
 import glob
 from flask_bcrypt import Bcrypt
@@ -393,6 +393,8 @@ def generate_ayat():
 
     activity = request.json["activity"]
     rule = request.json["ruleChosen"]
+    print('**************rule', rule)
+
     ruleDetails = Tajweed.Select_dict_path(rule)[0]
     beg = Tajweed.Select_dict_path(rule)[1]
     end = Tajweed.Select_dict_path(rule)[2]
@@ -504,25 +506,28 @@ def auth():
                     "students": []
                 }
 
+                rules = TajweedRules.query.all()
+
                 
-                for r in Rules:
-                    rules = TajweedRules(code=r)
-                    db.session.add(rules)
+                for r in rules:
+                    user_work = UserWork(rule=r.code, practice_ayah_count=0, test_ayah_count=0, total_correct=0, total_out_of=0)
+                    db.session.add(user_work)
+                    db.session.commit()
+                    
+                    user_work_stats = UserWorkStats(user_id=user.id, work_id=user_work.id)
+                    db.session.add(user_work_stats)
                     db.session.commit()
 
-                    user_tajweed = UserTajweedStats(user_id=user.id, rule_id=rules.id)
-                    db.session.add(user_tajweed)
-                    db.session.commit()
-                
-                allTaj = user.tajweed_rule
-                
-                for i in allTaj:
+                allWork = user.work
+
+                for i in allWork:  
+                                
                     allTajObj = {
-                        "code" : i.code,
-                        "practice_ayah_count": i.practice_ayah_count,
-                        "test_ayah_count": i.test_ayah_count,
-                        "total_correct": i.total_correct,
-                        "total_out_of": i.total_out_of
+                        "code" : i.rule,
+                        "practice_ayah_count": 0,
+                        "test_ayah_count": 0,
+                        "total_correct": 0,
+                        "total_out_of": 0
                     }
 
                     practice = []
@@ -534,7 +539,6 @@ def auth():
                             'ayah_count': r.ayah_count
                         }
         
-                        # practice.append(p_stats)  
                         practice.insert(0, p_stats)  
 
                     for t in i.test:
@@ -546,7 +550,6 @@ def auth():
                             'test_score_composite': t.test_score_composite
                         }
         
-                        # test.append(t_stats)  
                         test.insert(0, t_stats) 
                         
         
@@ -605,11 +608,11 @@ def auth():
                     
                     session["user"]["students"] = students
 
-                    allTaj = user.tajweed_rule
+                    allTaj = user.work
 
                     for i in allTaj:
                         allTajObj = {
-                            "code" : i.code,
+                            "code" : i.rule,
                             "practice_ayah_count": i.practice_ayah_count,
                             "test_ayah_count": i.test_ayah_count,
                             "total_correct": i.total_correct,
@@ -625,7 +628,6 @@ def auth():
                                 'ayah_count': r.ayah_count
                             }
             
-                            # practice.append(p_stats)  
                             practice.insert(0, p_stats)  
 
                         for t in i.test:
@@ -637,7 +639,6 @@ def auth():
                                 'test_score_composite': t.test_score_composite
                             }
             
-                            # test.append(t_stats)  
                             test.insert(0, t_stats) 
                         
             
@@ -683,6 +684,7 @@ def verify_auth():
         print('in verify auth and isauthenticated found in session', isAuthenticated)
 
         return (jsonify(response=isAuthenticated, user=user, tajweed=tajweed), 200 )
+        # return (jsonify(response=isAuthenticated), 200 )
 
     elif not "isAuthenticated" in session:
         isAuthenticated = False
@@ -707,8 +709,9 @@ def reset_practice():
     user = User.query.filter_by(username=username).first()
 
     for r in stats:
-        print('rule', r.split('_')[0])
-        user_rule = [c for c in user.tajweed_rule if c.code == r.split("_")[0]]
+        print('rule', r.split('-')[0])
+        user_rule = [c for c in user.work if c.rule == r.split("-")[0]]
+        print(user_rule)
         user_rule[0].practice_ayah_count = 0
 
         practice_stats = user_rule[0].practice
@@ -723,13 +726,13 @@ def reset_practice():
         practice_stats = user_rule[0].practice
         print('practice array after reseting practice', practice_stats)
     
-    allTaj = user.tajweed_rule
+    allTaj = user.work
 
     allTajArr = []
 
     for i in allTaj:
         allTajObj = {
-            "code" : i.code,
+            "code" : i.rule,
             "practice_ayah_count": i.practice_ayah_count,
             "test_ayah_count": i.test_ayah_count,
             "total_correct": i.total_correct,
@@ -745,7 +748,6 @@ def reset_practice():
                 'ayah_count': r.ayah_count
             }
 
-            # practice.append(p_stats)  
             practice.insert(0, p_stats)  
 
         for t in i.test:
@@ -757,7 +759,6 @@ def reset_practice():
                 'test_score_composite': t.test_score_composite
             }
 
-            # test.append(t_stats)  
             test.insert(0, t_stats) 
         
 
@@ -792,8 +793,8 @@ def reset_test():
     user = User.query.filter_by(username=username).first()
 
     for r in stats:
-        print('rule', r.split('_')[0])
-        user_rule = [c for c in user.tajweed_rule if c.code == r.split("_")[0]]
+        print('rule', r.split('-')[0])
+        user_rule = [c for c in user.work if c.rule == r.split("-")[0]]
         user_rule[0].test_ayah_count = 0
         user_rule[0].total_correct = 0
         user_rule[0].total_out_of = 0
@@ -810,13 +811,13 @@ def reset_test():
         test_stats = user_rule[0].test
         print('test arry after resettng tests', test_stats)
 
-    allTaj = user.tajweed_rule
+    allTaj = user.work
 
     allTajArr = []
 
     for i in allTaj:
         allTajObj = {
-            "code" : i.code,
+            "code" : i.rule,
             "practice_ayah_count": i.practice_ayah_count,
             "test_ayah_count": i.test_ayah_count,
             "total_correct": i.total_correct,
@@ -832,7 +833,6 @@ def reset_test():
                 'ayah_count': r.ayah_count
             }
 
-            # practice.append(p_stats)  
             practice.insert(0, p_stats)  
 
         for t in i.test:
@@ -844,7 +844,6 @@ def reset_test():
                 'test_score_composite': t.test_score_composite
             }
 
-            # test.append(t_stats)  
             test.insert(0, t_stats) 
         
 
@@ -878,10 +877,8 @@ def update_practice():
     allTajArr = []
 
     user = User.query.filter_by(username=username).first()
-    user_rule = [c for c in user.tajweed_rule if c.code == stats['rule']]
+    user_rule = [c for c in user.work if c.rule == stats['rule']]
 
-
-    print(user)
     
     practice = Practice(practice_date=db.func.now(), ayah_count=stats['ayah_count'], rule_id=user_rule[0].id, user=user.id)
 
@@ -892,7 +889,7 @@ def update_practice():
 
     db.session.commit()
 
-    allTaj = user.tajweed_rule
+    allTaj = user.work
 
     userObj = {
         "username": user.username,
@@ -904,7 +901,7 @@ def update_practice():
 
     for i in allTaj:
         allTajObj = {
-        "code" : i.code,
+        "code" : i.rule,
         "practice_ayah_count": i.practice_ayah_count,
         "test_ayah_count": i.test_ayah_count,
         "total_correct": i.total_correct,
@@ -919,12 +916,11 @@ def update_practice():
                 'ayah_count': r.ayah_count
             }
             
-            # practice.append(p_stats)  
             practice.insert(0, p_stats)  
             
         allTajObj['practice'] = practice  
 
-        test = [p['test'] for p in session['tajweed'] if p['code'] == i.code]
+        test = [p['test'] for p in session['tajweed'] if p['code'] == i.rule]
         
         for t in test:
             allTajObj['test'] = t
@@ -945,7 +941,7 @@ def update_test():
     allTajArr = []
 
     user = User.query.filter_by(username=username).first()
-    user_rule = [c for c in user.tajweed_rule if c.code == stats['rule']]
+    user_rule = [c for c in user.work if c.rule == stats['rule']]
     
     test = Test(test_date=db.func.now(), test_ayah_count=stats['ayah_count'], test_score_correct=stats['correct'], test_out_of_count=stats['out_of'], test_score_composite=stats['score'], rule_id=user_rule[0].id, user=user.id)
 
@@ -958,7 +954,7 @@ def update_test():
 
     db.session.commit()
 
-    allTaj = user.tajweed_rule
+    allTaj = user.work
 
     userObj = {
         "username": user.username,
@@ -970,7 +966,7 @@ def update_test():
 
     for i in allTaj:
         allTajObj = {
-        "code" : i.code,
+        "code" : i.rule,
         "practice_ayah_count": i.practice_ayah_count,
         "test_ayah_count": i.test_ayah_count,
         "total_correct": i.total_correct,
@@ -988,12 +984,11 @@ def update_test():
                 'test_score_composite': t.test_score_composite
             }
 
-            # test.append(t_stats)  
             test.insert(0, t_stats)
 
         allTajObj['test'] = test  
 
-        practice = [p['practice'] for p in session['tajweed'] if p['code'] == i.code]
+        practice = [p['practice'] for p in session['tajweed'] if p['code'] == i.rule]
         
         for p in practice:
             allTajObj['practice'] = p
@@ -1127,13 +1122,13 @@ def fetch_student():
                 }
 
 
-                allTaj = student.tajweed_rule
+                allTaj = student.work
 
                 allTajArr = []
 
                 for i in allTaj:
                     allTajObj = {
-                        "code" : i.code,
+                        "code" : i.rule,
                         "practice_ayah_count": i.practice_ayah_count,
                         "test_ayah_count": i.test_ayah_count,
                         "total_correct": i.total_correct,
@@ -1213,6 +1208,188 @@ def remove_student():
             return (jsonify(user=user), 200)
 
 
+@app.route('/api/fetch_rules')
+def fetch_rules():
+    user = User.query.filter_by(username=session['user']['username']).first()
+    curr_user = session['user']
 
+    if user.username == curr_user['username']:
+        tajweed_rules = TajweedRules.query.all()
+        rules = [{'code': r.code, 'name': r.name} for r in tajweed_rules]
+
+        return (jsonify(rules=rules), 200)
+
+@app.route('/api/fetch_single_rule', methods=['POST'])
+def fetch_rule():
+    user = User.query.filter_by(username=request.json['user']).first()
+    curr_user = session['user']
+    code = request.json['code']
+
+    if user.username == curr_user['username'] and user.account_type == 'admin':
+        tajweed_rule = TajweedRules.query.filter_by(code=code).first()
+
+        rule = {
+            "code": tajweed_rule.code,
+            "name": tajweed_rule.name,
+            "summary": tajweed_rule.summary,
+            "details": tajweed_rule.details,
+            "example": tajweed_rule.example,
+            "audio": tajweed_rule.audio,
+            "with_exercise": tajweed_rule.with_exercise
+        }
+
+        return (jsonify(rule=rule), 200)
+
+@app.route('/api/add_edit_rule', methods=['POST'])
+def add_edit_rule():
+    user = User.query.filter_by(username=request.json['user']).first()
+    curr_user = session['user']
+    ruleData = request.json['ruleData']
+    mode = request.json['mode']
+    allTajArr = []
+
+    if user.username == curr_user['username'] and user.account_type == 'admin':
+        if mode == 'add':
+
+            new_rule = TajweedRules(code=ruleData['rule_code'], name=ruleData['rule_name'], summary=ruleData['rule_summary'], details=ruleData['rule_details'], example=ruleData['rule_example'], audio=ruleData['rule_audio'], with_exercise=ruleData['rule_with_exercise'])
+            db.session.add(new_rule)
+            db.session.commit()
+
+            allUsers = User.query.all()
+
+            for u in allUsers:
+                user_work = UserWork(rule=new_rule.code, practice_ayah_count=0, test_ayah_count=0, total_correct=0, total_out_of=0)
+                db.session.add(user_work)
+                db.session.commit()
+
+                user_work_stats = UserWorkStats(user_id=u.id, work_id=user_work.id)
+                db.session.add(user_work_stats)
+                db.session.commit()
+            
+            allWork = user.work
+
+            for i in allWork:  
+                            
+                allTajObj = {
+                    "code" : i.rule,
+                    "practice_ayah_count": i.practice_ayah_count,
+                    "test_ayah_count": i.test_ayah_count,
+                    "total_correct": i.total_correct,
+                    "total_out_of": i.total_out_of
+                }
+
+                practice = []
+                test = []
+
+                for r in i.practice:
+                    p_stats = {
+                        'practice_date': r.practice_date,
+                        'ayah_count': r.ayah_count
+                    }
+    
+                    practice.insert(0, p_stats)  
+
+                for t in i.test:
+                    t_stats = {
+                        'test_date': t.test_date,
+                        'test_ayah_count': t.test_ayah_count,
+                        'test_score_correct': t.test_score_correct,
+                        'test_out_of_count': t.test_out_of_count,
+                        'test_score_composite': t.test_score_composite
+                    }
+    
+                    test.insert(0, t_stats) 
+                    
+    
+                allTajObj['practice'] = practice  
+                allTajObj['test'] = test
+                
+
+                allTajArr.append(allTajObj)
+
+            session["tajweed"] = allTajArr
+
+            return (jsonify(result='success', tajweed=session['tajweed']), 200)
+        
+        elif mode == 'edit':
+            existing_rule = TajweedRules.query.filter_by(code=ruleData['rule_code']).first()
+            
+            existing_rule.name=ruleData['rule_name']
+            existing_rule.summary=ruleData['rule_summary']
+            existing_rule.details=ruleData['rule_details']
+            existing_rule.example=ruleData['rule_example']
+            existing_rule.audio=ruleData['rule_audio']
+            existing_rule.with_exercise=ruleData['rule_with_exercise']
+
+            db.session.add(existing_rule)
+            db.session.commit()
+
+            return (jsonify(result='success'), 200)
+
+@app.route('/api/delete_rule', methods=['POST'])
+def delete_rule():
+    user = User.query.filter_by(username=request.json['user']).first()
+    curr_user = session['user']
+    code = request.json['code']
+    allTajArr = []
+
+    if user.username == curr_user['username'] and user.account_type == 'admin':
+
+        deletedRule = TajweedRules.query.filter_by(code=code).delete()
+        db.session.commit()
+        
+        ruleWork = UserWork.query.filter_by(rule=code)
+
+        for r in ruleWork:
+
+            deletedUserWork = UserWork.query.filter_by(id=r.id).delete()
+
+            deletedStats = UserWorkStats.query.filter_by(work_id=r.id).delete()
+            db.session.commit()
+        
+        allWork = user.work
+
+        for i in allWork:  
+                        
+            allTajObj = {
+                "code" : i.rule,
+                "practice_ayah_count": i.practice_ayah_count,
+                "test_ayah_count": i.test_ayah_count,
+                "total_correct": i.total_correct,
+                "total_out_of": i.total_out_of
+            }
+
+            practice = []
+            test = []
+
+            for r in i.practice:
+                p_stats = {
+                    'practice_date': r.practice_date,
+                    'ayah_count': r.ayah_count
+                }
+
+                practice.insert(0, p_stats)  
+
+            for t in i.test:
+                t_stats = {
+                    'test_date': t.test_date,
+                    'test_ayah_count': t.test_ayah_count,
+                    'test_score_correct': t.test_score_correct,
+                    'test_out_of_count': t.test_out_of_count,
+                    'test_score_composite': t.test_score_composite
+                }
+
+                test.insert(0, t_stats) 
+                
+
+            allTajObj['practice'] = practice  
+            allTajObj['test'] = test
+            
+
+            allTajArr.append(allTajObj)
+
+        session["tajweed"] = allTajArr
+
+        return (jsonify(result='deleted', tajweed=session['tajweed']), 200)
 
 

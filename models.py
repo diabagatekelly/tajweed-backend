@@ -36,9 +36,10 @@ class User(db.Model):
                         server_default=db.func.now(), 
                         server_onupdate=db.func.now())
 
-    tajweed_rule = db.relationship('TajweedRules', secondary="user_tajweed_stats", backref='user', cascade="all,delete")
+    work = db.relationship('UserWork', secondary="user_work_stats", backref='user', cascade="all,delete")
 
     students = db.relationship('Student', backref='users', cascade="all,delete")
+
 
     # start_register
     @classmethod
@@ -130,12 +131,35 @@ class TajweedRules(db.Model):
     id = db.Column(db.Integer, 
                     primary_key=True)
     code = db.Column(db.Text, 
-                    nullable=False)
-    practice = db.relationship('Practice', backref='tajweed_rules', cascade="all,delete")
+                    nullable=False,
+                    unique=True)
+    name = db.Column(db.Text, 
+                    nullable=True)
+    summary = db.Column(db.Text, 
+                    nullable=True)
+    details = db.Column(db.Text, 
+                    nullable=True)
+    example = db.Column(db.Text, 
+                    nullable=True)
+    audio = db.Column(db.Text, 
+                    nullable=True)
+    with_exercise = db.Column(db.Boolean,
+                    default=True)
+
+
+class UserWork(db.Model):
+    """User practice and tests"""
+
+    __tablename__="user_work"
+
+    id = db.Column(db.Integer, 
+                primary_key=True)
+    rule = db.Column(db.Text, nullable=False)
+    practice = db.relationship('Practice', backref='user_work', cascade="all,delete")
     practice_ayah_count = db.Column(db.Integer,
                     nullable=False,
                     default=0)
-    test = db.relationship('Test', backref='tajweed_rules', cascade="all,delete")
+    test = db.relationship('Test', backref='user_work', cascade="all,delete")
     test_ayah_count = db.Column(db.Integer,
                     nullable=False,
                     default=0)
@@ -146,23 +170,20 @@ class TajweedRules(db.Model):
                     nullable=False,
                     default=0)
 
-    
-    user_rule = db.relationship('User', secondary="user_tajweed_stats", backref='tajweed_rules', cascade="all,delete")
+    user_ref = db.relationship('User', secondary="user_work_stats", backref='user_work', cascade="all,delete")
 
 
 
-class UserTajweedStats(db.Model):
-    """User_Tajweed Link"""
+class UserWorkStats(db.Model):
+    """User Work Stats"""
 
-    __tablename__ = "user_tajweed_stats"
+    __tablename__ = "user_work_stats"
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete="cascade"))
-    rule_id = db.Column(db.Integer, db.ForeignKey('tajweed_rules.id', ondelete="cascade"))
-
+    work_id = db.Column(db.Integer, db.ForeignKey('user_work.id', ondelete="cascade"))
 
       
-
 class Practice(db.Model):
     """Practice Stat"""
 
@@ -173,7 +194,7 @@ class Practice(db.Model):
                 nullable=False)
     ayah_count = db.Column(db.Integer,
                 nullable=False)
-    rule_id = db.Column(db.Integer, db.ForeignKey('tajweed_rules.id', ondelete="cascade"))
+    rule_id = db.Column(db.Integer, db.ForeignKey('user_work.id', ondelete="cascade"))
     user = db.Column(db.Integer, db.ForeignKey('users.id', ondelete="cascade"))
 
 class Test(db.Model):
@@ -196,7 +217,7 @@ class Test(db.Model):
     test_score_composite = db.Column(db.Text,
                         nullable=False,
                         default='0/0')
-    rule_id = db.Column(db.Integer, db.ForeignKey('tajweed_rules.id', ondelete="cascade"))                    
+    rule_id = db.Column(db.Integer, db.ForeignKey('user_work.id', ondelete="cascade"))                    
     user = db.Column(db.Integer, db.ForeignKey('users.id', ondelete="cascade"))
 
 class Student(db.Model):

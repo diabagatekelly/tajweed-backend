@@ -1,17 +1,17 @@
 code,name
-ghunnah,Ghunnah
-idghaamGhunnah,Idghaam with Ghunnah
-idghaamNoGhunnah,Idghaam with No Ghunnah
-ikhfa,Ikhfa
-iqlab,Iqlab
-madd246,Madd of 2, 4 or 6
-madd,Long Madd
-qalqalah,Qalqalah
-hamzatWasl,Hamzatul Wasl
-
-
-
-
-
-
-
+ghunnah, Ghunnah
+idghaam_ghunnah, Idghaam w/ Ghunnah (Noon Saakin)
+idghaam_no_ghunnah, Idghaam w/ No Ghunnah (Noon Saakin)
+idghaam_mutajanisayn, Idghaam Mutajaanisayn
+idghaam_mutaqaribayn, Idghaam Mutaqaaribayn
+idghaam_shafawi, Idghaam Shafawi (Meem Saakin)
+ikhfa, Ikhfa (Noon Saakin)
+ikhfa_shafawi, Ikhfa Shafawi (Meem Saakin)
+idhaar, Idhaar (Noon Saakin)
+idhaar_shafawi, Idhaar Shafawi (Meem Saakin)
+iqlab, Iqlab
+madd_246, Madd al-Aarid/al-Leen: 2, 4, 6 harakat
+madd_muttasil, Madd al-Muttasil: 4, 5 harakat
+madd_munfasil, Madd al-Munfasil: 4, 5 harakat
+madd_6, Madd Laazim: 6 harakat
+qalqalah, Qalqalah
