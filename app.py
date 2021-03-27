@@ -25,8 +25,9 @@ CORS(app)
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', "kelly-af-01221990")
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'postgresql:///tajweed')
-app.config['SESSION_TYPE'] = 'redis'
-app.config['SESSION_REDIS'] = redis.from_url(os.environ.get('REDIS_URL'))
+app.config['SESSION_TYPE'] = 'sqlalchemy'
+app.config['SESSION_SQLALCHEMY'] = db
+app.config[SESSION_SQLALCHEMY_TABLE] = 'sessions'
 app.config['SESSION_PERMANENT'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=60)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -37,8 +38,12 @@ app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 debug = DebugToolbarExtension(app)
 connect_db(app)
 
+db = SQLAlchemy(app)
 sess = Session()
 sess.init_app(app)
+
+
+session.app.session_interface.db.create_all()
 
 wordDict = Counter()
 
