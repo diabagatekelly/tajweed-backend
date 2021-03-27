@@ -2,6 +2,7 @@ import codecs
 from collections import Counter
 from flask import Flask, render_template, jsonify, json, request, session
 from flask_session import Session
+from datetime import timedelta
 from flask_debugtoolbar import DebugToolbarExtension
 from flask_cors import CORS, cross_origin
 import pyquran as q
