@@ -2,6 +2,7 @@ import codecs
 from collections import Counter
 from flask import Flask, render_template, jsonify, json, request, session
 from flask_session import Session
+import redis
 from datetime import timedelta
 from flask_debugtoolbar import DebugToolbarExtension
 from flask_cors import CORS, cross_origin
@@ -24,7 +25,8 @@ CORS(app)
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', "kelly-af-01221990")
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'postgresql:///tajweed')
-app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_TYPE'] = 'redis'
+app.config['SESSION_REDIS'] = redis.from_url(os.environ.get('SESSION_REDIS'))
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = True
 app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
