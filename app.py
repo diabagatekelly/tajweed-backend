@@ -40,18 +40,22 @@ app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 debug = DebugToolbarExtension(app)
 connect_db(app)
 
-db = SQLAlchemy(app)
+db = SQLAlchemy()
 sess = Session()
 sess.init_app(app)
 
 
-session.app.session_interface.db.create_all()
 
 wordDict = Counter()
 
 tajweedJSON = {}
 idghaamNoGhunnahJSON = {}
 
+@app.before_request
+def connect_db(app):
+    db.app = app
+    db.init_app(app)
+    session.app.session_interface.db.create_all()
 
 @app.route('/')
 def start():
