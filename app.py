@@ -2,6 +2,8 @@ import codecs
 from collections import Counter
 from flask import Flask, render_template, jsonify, json, request, session
 from flask_session import Session
+from flask_sqlalchemy import SQLAlchemy
+
 import redis
 from datetime import timedelta
 from flask_debugtoolbar import DebugToolbarExtension
