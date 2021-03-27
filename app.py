@@ -896,12 +896,10 @@ def remove_student():
 @app.route('/api/fetch_rules')
 def fetch_rules():
     print('in fetch_rules', session)
-    print('session user', session['user'])
-    print('session tajweed', session['tajweed'])
+    print('session user', session.get('user'))
 
-
-    user = User.query.filter_by(username=session['user']['username']).first()
-    curr_user = session['user']
+    curr_user = session.get('user')
+    user = User.query.filter_by(username=curr_user['username']).first()
 
     if user.username == curr_user['username']:
         tajweed_rules = TajweedRules.query.all()
