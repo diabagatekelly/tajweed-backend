@@ -54,6 +54,7 @@ def create_session_recipes():
     """Add recent API recipes to session"""
     if not user in session:
         session["user"] = []
+        return render_template('home.html')
 
 
 @app.route('/')
