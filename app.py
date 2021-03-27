@@ -273,6 +273,8 @@ def auth():
                         "students": []
                     }
 
+                    print(session['user'])
+
                     
                     students = []
                     for i in user.students:
