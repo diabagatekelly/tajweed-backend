@@ -48,6 +48,11 @@ def make_session_permanent():
     SESSION_PERMANENT = True
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=60)
 
+def create_session_recipes():
+    """Add recent API recipes to session"""
+    if not user in session:
+        session["user"] = []
+
 
 @app.route('/')
 def start():
