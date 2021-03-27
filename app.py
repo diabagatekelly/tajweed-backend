@@ -1,7 +1,8 @@
 import codecs
 from collections import Counter
 from flask import Flask, render_template, jsonify, json, request, session
-from flask_session import Session
+from flask_session import Session, SqlAlchemySessionInterface
+from flask_sqlalchemy import SQLAlchemy
 import redis
 from datetime import timedelta
 from flask_debugtoolbar import DebugToolbarExtension
@@ -38,6 +39,7 @@ app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 debug = DebugToolbarExtension(app)
 connect_db(app)
 
+# db = SQLAlchemy()
 sess = Session()
 sess.init_app(app)
 
@@ -50,7 +52,7 @@ idghaamNoGhunnahJSON = {}
 
 # @app.before_request
 # def connect_db(app):
-#     sess.app.session_interface.db.create_all()
+#     SqlAlchemySessionInterface(app, db, "sessions", "sess_")
 
 @app.route('/')
 def start():

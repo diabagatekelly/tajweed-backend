@@ -1,6 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_session import SqlAlchemySessionInterface
-from app.extensions import db, sess, migrate
 from flask_bcrypt import Bcrypt
 
 db = SQLAlchemy()
@@ -8,9 +7,7 @@ db = SQLAlchemy()
 def connect_db(app):
     db.app = app
     db.init_app(app)
-    migrate.init_app(app, db)
 
-    sess.init_app(app)
     SqlAlchemySessionInterface(app, db, "sessions", "sess_")
 
 # MAIN TABLES
