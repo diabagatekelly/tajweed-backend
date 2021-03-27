@@ -1,6 +1,7 @@
 import codecs
 from collections import Counter
 from flask import Flask, render_template, jsonify, json, request, session
+from flask_session import Session
 from flask_debugtoolbar import DebugToolbarExtension
 from flask_cors import CORS, cross_origin
 import pyquran as q
@@ -20,19 +21,30 @@ app = Flask(__name__)
 
 CORS(app)
 
-app.config["SECRET_KEY"] = "kelly-af-01221990"
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', "kelly-af-01221990")
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'postgresql:///tajweed')
-# app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = True
 app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
+
 debug = DebugToolbarExtension(app)
 connect_db(app)
+
+sess = Session()
+sess.init_app(app)
 
 wordDict = Counter()
 
 tajweedJSON = {}
 idghaamNoGhunnahJSON = {}
+
+
+@app.before_request
+def make_session_permanent():
+    """Establish session"""
+    SESSION_PERMANENT = True
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=60)
 
 
 @app.route('/')
