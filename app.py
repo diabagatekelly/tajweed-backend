@@ -2,7 +2,7 @@ import codecs
 from collections import Counter
 from flask import Flask, render_template, jsonify, json, request, session
 from flask_debugtoolbar import DebugToolbarExtension
-# from flask_cors import CORS, cross_origin
+from flask_cors import CORS, cross_origin
 import pyquran as q
 import random
 from tajweed import Tajweed
@@ -17,6 +17,9 @@ from flask_bcrypt import Bcrypt
 
 
 app = Flask(__name__)
+
+CORS(app)
+
 app.config["SECRET_KEY"] = "kelly-af-01221990"
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'postgresql:///tajweed')
 # app.config['SESSION_TYPE'] = 'filesystem'
