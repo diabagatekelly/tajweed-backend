@@ -344,6 +344,7 @@ def auth():
 @app.route('/api/verify_auth')
 def verify_auth():
     print('in verify_auth')
+    print('session user', session['user'])
     if "isAuthenticated" in session:
         isAuthenticated = True
         saved_user = session["user"]
