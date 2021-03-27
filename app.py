@@ -273,7 +273,7 @@ def auth():
                         "students": []
                     }
 
-                    print(session['user'])
+                    print('session user', session['user'])
 
                     
                     students = []
@@ -328,6 +328,7 @@ def auth():
                         allTajArr.append(allTajObj)
 
                     session["tajweed"] = allTajArr
+                    print('all session', session['user'], session['tajweed'])
                 
                     return (jsonify(isAuthenticated=isAuthenticated), 200 )
                 else:
