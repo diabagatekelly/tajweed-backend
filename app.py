@@ -273,8 +273,6 @@ def auth():
                         "students": []
                     }
 
-                    print('session user', session['user'])
-
                     
                     students = []
                     for i in user.students:
@@ -328,7 +326,6 @@ def auth():
                         allTajArr.append(allTajObj)
 
                     session["tajweed"] = allTajArr
-                    print('all session', session['user'], session['tajweed'])
                 
                     return (jsonify(isAuthenticated=isAuthenticated), 200 )
                 else:
@@ -891,6 +888,10 @@ def remove_student():
 @app.route('/api/fetch_rules')
 def fetch_rules():
     print('in fetch_rules', session)
+    print('session user', session['user'])
+    print('session tajweed', session['tajweed'])
+
+
     user = User.query.filter_by(username=session['user']['username']).first()
     curr_user = session['user']
 
