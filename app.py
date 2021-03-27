@@ -874,6 +874,7 @@ def remove_student():
 
 @app.route('/api/fetch_rules')
 def fetch_rules():
+    print('in fetch_rules', session)
     user = User.query.filter_by(username=session['user']['username']).first()
     curr_user = session['user']
 
