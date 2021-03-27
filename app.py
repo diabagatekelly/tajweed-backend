@@ -2,8 +2,6 @@ import codecs
 from collections import Counter
 from flask import Flask, render_template, jsonify, json, request, session
 from flask_session import Session
-from flask_sqlalchemy import SQLAlchemy
-
 import redis
 from datetime import timedelta
 from flask_debugtoolbar import DebugToolbarExtension
@@ -40,7 +38,6 @@ app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 debug = DebugToolbarExtension(app)
 connect_db(app)
 
-db = SQLAlchemy(app)
 sess = Session()
 sess.init_app(app)
 
@@ -51,9 +48,9 @@ wordDict = Counter()
 tajweedJSON = {}
 idghaamNoGhunnahJSON = {}
 
-@app.before_request
-def connect_db(app):
-    sess.app.session_interface.db.create_all()
+# @app.before_request
+# def connect_db(app):
+#     sess.app.session_interface.db.create_all()
 
 @app.route('/')
 def start():
