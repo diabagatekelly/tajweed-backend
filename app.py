@@ -157,7 +157,8 @@ def generate_ayat():
 def auth():
     print('firing auth')
     data = json.loads(request.data)
-
+    
+    userData = json.loads(data["data"])
     mode = json.loads(data["mode"])
     allTajArr = []
 
@@ -190,7 +191,7 @@ def auth():
 
         elif mode == 'register':
             
-            userData = json.loads(data["data"])
+            
             try:
                 user = User.register(
                     first_name = userData["first_name"], 
