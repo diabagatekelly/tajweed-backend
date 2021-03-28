@@ -155,7 +155,9 @@ def generate_ayat():
 
 @app.route("/api/auth", methods=["POST"])
 def auth():
-    print('firing auth')
+    print('firing auth', session)
+    print('session user', session.get('user'))
+    print('session user', session['user'])
     data = json.loads(request.data)
 
     userData = json.loads(data["data"])
@@ -190,8 +192,7 @@ def auth():
             return (jsonify(response=isAuthenticated), 200 )
 
         elif mode == 'register':
-            
-            
+        
             try:
                 user = User.register(
                     first_name = userData["first_name"], 
@@ -285,6 +286,7 @@ def auth():
 
         elif mode == 'login':
             if 'user' in session and session['user']["first_name"] == userData["username"]:
+                session["isAuthenticated"] = user.username
                 isAuthenticated = True
                 return (jsonify(response=isAuthenticated, user=session['user'], tajweed=session['tajweed']), 200 )
             else:
@@ -406,7 +408,7 @@ def auth():
 
 @app.route('/api/logout')
 def logout():
-    print('in logout')
+    print('in logout', session)
     session.pop('isAuthenticated', None)
     session.pop('user', None)
     session.pop('tajweed', None)
@@ -923,8 +925,10 @@ def remove_student():
 
 @app.route('/api/fetch_rules')
 def fetch_rules():
-    # print('in fetch_rules', session)
-    # print('session user', session.get('user'))
+    print('in fetch_rules', session)
+    print('session user', session.get('user'))
+    print('session user', session['user'])
+
 
     # curr_user = session.get('user')
     # user = User.query.filter_by(username=curr_user['username']).first()
