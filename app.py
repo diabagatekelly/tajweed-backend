@@ -1,6 +1,7 @@
 import codecs
 from collections import Counter
 from flask import Flask, render_template, jsonify, json, request, session
+import requests
 from flask_session import Session
 import redis
 from datetime import timedelta
@@ -155,8 +156,8 @@ def generate_ayat():
 
 @app.route("/api/auth", methods=["POST"])
 def auth():
-    print('type of request', request, request.method)
-    if request.method != 'OPTIONS':
+    print('type of request', requests, requests.method)
+    if requests.method != 'OPTIONS':
         print('firing auth')
 
         userData = request.json["data"]
