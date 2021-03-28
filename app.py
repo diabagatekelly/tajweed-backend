@@ -156,7 +156,7 @@ def generate_ayat():
 @app.route("/api/auth", methods=["POST"])
 def auth():
     print('firing auth')
-    print(jsonify(request.data))
+    print(json.loads(request.data))
 
     userData = request.json["data"]
     mode = request.json["mode"]
