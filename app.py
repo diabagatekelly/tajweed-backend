@@ -21,8 +21,6 @@ from flask_bcrypt import Bcrypt
 
 app = Flask(__name__)
 
-CORS(app)
-
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', "kelly-af-01221990")
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'postgresql:///tajweed')
 app.config['SESSION_TYPE'] = 'redis'
@@ -37,11 +35,12 @@ app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 debug = DebugToolbarExtension(app)
 connect_db(app)
 
+
 # db = SQLAlchemy()
 sess = Session()
 sess.init_app(app)
 
-
+CORS(app)
 
 wordDict = Counter()
 
@@ -169,7 +168,7 @@ def auth():
         print('firing auth', session)
         print('session user', session.get('user'))
         print('session user', session['user'])
-        
+
         saved_user = session["user"]
         tajweed = session["tajweed"]
         
