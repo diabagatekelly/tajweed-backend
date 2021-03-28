@@ -155,9 +155,6 @@ def generate_ayat():
 
 @app.route("/api/auth", methods=["POST"])
 def auth():
-    print('firing auth', session)
-    print('session user', session.get('user'))
-    print('session user', session['user'])
     data = json.loads(request.data)
 
     userData = json.loads(data["data"])
@@ -168,6 +165,11 @@ def auth():
 
     if "isAuthenticated" in session:
         isAuthenticated = True
+
+        print('firing auth', session)
+        print('session user', session.get('user'))
+        print('session user', session['user'])
+        
         saved_user = session["user"]
         tajweed = session["tajweed"]
         
