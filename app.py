@@ -363,7 +363,7 @@ def auth():
                         print(session['user'])
                         print(session['tajweed'])
                     
-                        return (jsonify(response=isAuthenticated, user=session['user'], tajweed=session['tajweed']), 200 )
+                        return (jsonify(isAuthenticated=isAuthenticated, user=session['user'], tajweed=session['tajweed']), 200 )
                     else:
                         isAuthenticated = False
                         message = 'Error logging in user'
