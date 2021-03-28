@@ -155,6 +155,7 @@ def generate_ayat():
 
 @app.route("/api/auth", methods=["POST"])
 def auth():
+    print('type of request', request, request.method)
     if request.method != 'OPTIONS':
         print('firing auth')
 
