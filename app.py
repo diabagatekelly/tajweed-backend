@@ -52,7 +52,7 @@ def start():
     return render_template('home.html')
 
 @app.route('/session')
-def showSess();
+def showSess():
     return render_template('blank.html', session=session)
 
 @app.route("/api/get_explanation", methods=["POST"])
