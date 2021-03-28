@@ -365,6 +365,7 @@ def auth():
                         session["tajweed"] = allTajArr
                         print(session['user'])
                         print(session['tajweed'])
+                        print(session['isAuthenticated'])
                     
                         return (jsonify(isAuthenticated=isAuthenticated, user=session['user'], tajweed=session['tajweed']), 200 )
                     else:
