@@ -27,7 +27,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'postgres
 # app.config['SESSION_TYPE'] = 'redis'
 # app.config['SESSION_REDIS'] = redis.from_url(os.environ.get('REDIS_URL'))
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
-
+app.config['SESSION_COOKIE_SECURE']=True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = True
 app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
