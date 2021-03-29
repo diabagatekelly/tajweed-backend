@@ -51,6 +51,7 @@ idghaamNoGhunnahJSON = {}
 
 @app.after_request
 def cookies(response):
+    print(session_cookie)
     same_cookie = session_cookie.dumps(dict(session))
     response.headers.add("Set-Cookie", f"my_cookie={same_cookie}; Secure; HttpOnly; SameSite=None; Path=/;")
     return response
