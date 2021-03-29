@@ -51,8 +51,8 @@ idghaamNoGhunnahJSON = {}
 
 @app.after_request
 def cookies(response):
-    same_cookie = session_cookie
-    response.headers.add("Set-Cookie", "SameSite=None;")
+    same_cookie = session_cookie['value']
+    response.headers.add("Set-Cookie", "my_cookie={same_cookie}; Secure; HttpOnly; SameSite=None; Path=/;")
     return response
 
 @app.route('/')
