@@ -83,7 +83,7 @@ def generate_ayat():
     print(abs_file_path)
 
     text = []
-    f = open(r'C:\Users\kelly\Documents\Development Related\Portfolio Projects\islamic ed suite (angular + python + sql)\Tajweed app python backend\quran-uthmani.txt', encoding='utf-8')
+    f = open(r'/app/quran-uthmani.txt', encoding='utf-8')
     for line in f:
         text.append(line)
 
