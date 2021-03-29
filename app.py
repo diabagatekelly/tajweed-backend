@@ -66,8 +66,8 @@ def get_expl():
 
 @app.route("/api/generate_ayat", methods=["POST"])
 def generate_ayat():
-    print(sessio['user'])
-    
+    print(session['user'])
+
     text = []
     f = open(r'C:\Users\kelly\Documents\Development Related\Portfolio Projects\islamic ed suite (angular + python + sql)\Tajweed app python backend\quran-uthmani.txt', encoding='utf-8')
     for line in f:
@@ -168,7 +168,6 @@ def auth():
         isAuthenticated = True
 
         print('firing auth', session)
-        print('session user', session.get('user'))
         print('session user', session['user'])
 
         saved_user = session["user"]
