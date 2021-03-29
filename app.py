@@ -75,27 +75,24 @@ def get_expl():
 @app.route("/api/generate_ayat", methods=["POST"])
 def generate_ayat():
     print(session['user'])
-    
-    script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
-    rel_path = "quran-uthmani.txt"
-    abs_file_path = os.path.join(script_dir, rel_path)
 
-    print(abs_file_path)
 
     text = []
     f = open(r'/app/quran-uthmani.txt', encoding='utf-8')
     for line in f:
         text.append(line)
+    
+    data = json.loads(request.data)
 
-    activity = request.json["activity"]
-    rule = request.json["ruleChosen"]
+    activity = data["activity"]
+    rule =data["ruleChosen"]
     print('**************rule', rule)
 
     ruleDetails = Tajweed.Select_dict_path(rule)[0]
     beg = Tajweed.Select_dict_path(rule)[1]
     end = Tajweed.Select_dict_path(rule)[2]
 
-    ayatRange = int(request.json["range"])
+    ayatRange = int(data["range"])
     ayat = []
 
     # if rule != "idghaam_no_ghunnah" and rule != "iqlab" and rule != "idghaam_mutaqaribayn" and rule != "idghaam_mutajanisayn" and rule != 'idghaam_shafawi' and rule != 'ghunnah' and activity != "learn":
