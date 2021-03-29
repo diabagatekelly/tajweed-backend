@@ -41,8 +41,9 @@ connect_db(app)
 # sess.init_app(app)
 
 CORS(app, supports_credentials=True)
-session_cookie = SecureCookieSessionInterface().get_signing_serializer(app)
+# session_cookie = SecureCookieSessionInterface().get_signing_serializer(app)
 
+session_cookie = session
 wordDict = Counter()
 
 tajweedJSON = {}
