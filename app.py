@@ -52,7 +52,7 @@ idghaamNoGhunnahJSON = {}
 @app.after_request
 def cookies(response):
     same_cookie = session_cookie
-    response.headers.add("Set-Cookie", f"my_cookie={same_cookie}; Secure; HttpOnly; SameSite=None; Path=/;")
+    response.headers.add("Set-Cookie", "SameSite=None;")
     return response
 
 @app.route('/')
@@ -74,8 +74,6 @@ def get_expl():
 
 @app.route("/api/generate_ayat", methods=["POST"])
 def generate_ayat():
-    print(session['user'])
-
     text = []
     f = open(r'C:\Users\kelly\Documents\Development Related\Portfolio Projects\islamic ed suite (angular + python + sql)\Tajweed app python backend\quran-uthmani.txt', encoding='utf-8')
     for line in f:
