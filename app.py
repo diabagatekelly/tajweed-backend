@@ -66,6 +66,8 @@ def get_expl():
 
 @app.route("/api/generate_ayat", methods=["POST"])
 def generate_ayat():
+    print(sessio['user'])
+    
     text = []
     f = open(r'C:\Users\kelly\Documents\Development Related\Portfolio Projects\islamic ed suite (angular + python + sql)\Tajweed app python backend\quran-uthmani.txt', encoding='utf-8')
     for line in f:
@@ -929,14 +931,14 @@ def fetch_rules():
     print('session user', session['user'])
 
 
-    # curr_user = session.get('user')
-    # user = User.query.filter_by(username=curr_user['username']).first()
+    curr_user = session.get('user')
+    user = User.query.filter_by(username=curr_user['username']).first()
 
-    # if user.username == curr_user['username']:
-    tajweed_rules = TajweedRules.query.all()
-    rules = [{'code': r.code, 'name': r.name} for r in tajweed_rules]
+    if user.username == curr_user['username']:
+        tajweed_rules = TajweedRules.query.all()
+        rules = [{'code': r.code, 'name': r.name} for r in tajweed_rules]
 
-    return (jsonify(rules=rules), 200)
+        return (jsonify(rules=rules), 200)
 
 @app.route('/api/fetch_single_rule', methods=['POST'])
 def fetch_rule():
