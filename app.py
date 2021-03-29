@@ -171,6 +171,7 @@ def auth():
 
         saved_user = session["user"]
         tajweed = session["tajweed"]
+        ruleList = session['ruleList']
         
         user = {
             "username": saved_user["username"],
@@ -183,16 +184,11 @@ def auth():
 
         print('in verify auth and isauthenticated found in session', isAuthenticated)
 
-        return (jsonify(response=isAuthenticated, user=user, tajweed=tajweed), 200 )
-        # return (jsonify(response=isAuthenticated), 200 )
+        return (jsonify(response=isAuthenticated, user=user, tajweed=tajweed, rules=ruleList), 200 )
 
     elif not "isAuthenticated" in session:
-        if mode == 'guard':
-            isAuthenticated = False
-            print('in auth and isauthenticated NOT found in session', isAuthenticated)
-            return (jsonify(response=isAuthenticated), 200 )
 
-        elif mode == 'register':
+        if mode == 'register':
         
             try:
                 user = User.register(
@@ -208,6 +204,7 @@ def auth():
                 if user:
                     isAuthenticated = True
                     session["isAuthenticated"] = user.username
+
                     session["user"] = {
                         "first_name": user.first_name,
                         "last_name": user.last_name,
@@ -219,7 +216,9 @@ def auth():
 
                     rules = TajweedRules.query.all()
 
-                    
+                    ruleList = [{'code': r.code, 'name': r.name} for r in tajweed_rules]
+                    session['ruleList'] = ruleList
+
                     for r in rules:
                         user_work = UserWork(rule=r.code, practice_ayah_count=0, test_ayah_count=0, total_correct=0, total_out_of=0)
                         db.session.add(user_work)
@@ -272,111 +271,109 @@ def auth():
 
                     session["tajweed"] = allTajArr    
 
-                    return (jsonify(response=isAuthenticated, user=session['user'], tajweed=session['tajweed']), 200 )
-                    # return (jsonify(isAuthenticated=isAuthenticated), 200 )
+                    return (jsonify(isAuthenticated=isAuthenticated, user=session['user'], tajweed=session['tajweed'], rules=session['ruleList']), 200 )
                 else:
                     isAuthenticated = False
                     message = 'Error registering user'
                     return (jsonify(isAuthenticated=isAuthenticated, message=message), 400 )
 
-                
             except IntegrityError:
                 isAuthenticated = False
                 message = 'Error registering user'
                 return (jsonify(isAuthenticated=isAuthenticated, message=message), 500 )
 
         elif mode == 'login':
-            if 'user' in session and session['user']["first_name"] == userData["username"]:
-                session["isAuthenticated"] = user.username
-                isAuthenticated = True
-                return (jsonify(response=isAuthenticated, user=session['user'], tajweed=session['tajweed']), 200 )
-            else:
-                try:
-                    user = User.authenticate(
-                    username = userData["username"], 
-                    password = userData["password"])
+            try:
+                user = User.authenticate(
+                username = userData["username"], 
+                password = userData["password"])
 
-                    db.session.commit()
+                db.session.commit()
 
-                    if user:
-                        isAuthenticated = True
-                        session["isAuthenticated"] = user.username
-                        session["user"] = {
-                            "first_name": user.first_name,
-                            "last_name": user.last_name,
-                            "email": user.email,
-                            "username": user.username,
-                            "account_type": user.account_type,
-                            "students": []
+                if user:
+                    isAuthenticated = True
+                    session["isAuthenticated"] = user.username
+
+                    tajweed_rules = TajweedRules.query.all()
+                    ruleList = [{'code': r.code, 'name': r.name} for r in tajweed_rules]
+                    session['ruleList'] = ruleList
+
+                    session["user"] = {
+                        "first_name": user.first_name,
+                        "last_name": user.last_name,
+                        "email": user.email,
+                        "username": user.username,
+                        "account_type": user.account_type,
+                        "students": []
+                    }
+
+                    
+                    students = []
+                    for i in user.students:
+                        students.append(
+                            {"first_name": i.student_firstName,
+                            "last_name": i.student_lastName,
+                            "username": i.student_username,
+                            "email": i.student_email}
+                            )
+                    
+                    session["user"]["students"] = students
+
+                    allTaj = user.work
+
+                    for i in allTaj:
+                        allTajObj = {
+                            "code" : i.rule,
+                            "practice_ayah_count": i.practice_ayah_count,
+                            "test_ayah_count": i.test_ayah_count,
+                            "total_correct": i.total_correct,
+                            "total_out_of": i.total_out_of
                         }
 
-                        
-                        students = []
-                        for i in user.students:
-                            students.append(
-                                {"first_name": i.student_firstName,
-                                "last_name": i.student_lastName,
-                                "username": i.student_username,
-                                "email": i.student_email}
-                                )
-                        
-                        session["user"]["students"] = students
+                        practice = []
+                        test = []
 
-                        allTaj = user.work
-
-                        for i in allTaj:
-                            allTajObj = {
-                                "code" : i.rule,
-                                "practice_ayah_count": i.practice_ayah_count,
-                                "test_ayah_count": i.test_ayah_count,
-                                "total_correct": i.total_correct,
-                                "total_out_of": i.total_out_of
+                        for r in i.practice:
+                            p_stats = {
+                                'practice_date': r.practice_date,
+                                'ayah_count': r.ayah_count
                             }
+            
+                            practice.insert(0, p_stats)  
 
-                            practice = []
-                            test = []
+                        for t in i.test:
+                            t_stats = {
+                                'test_date': t.test_date,
+                                'test_ayah_count': t.test_ayah_count,
+                                'test_score_correct': t.test_score_correct,
+                                'test_out_of_count': t.test_out_of_count,
+                                'test_score_composite': t.test_score_composite
+                            }
+            
+                            test.insert(0, t_stats) 
+                        
+            
+                        allTajObj['practice'] = practice  
+                        allTajObj['test'] = test
+                        
 
-                            for r in i.practice:
-                                p_stats = {
-                                    'practice_date': r.practice_date,
-                                    'ayah_count': r.ayah_count
-                                }
+                        allTajArr.append(allTajObj)
+
+                    session["tajweed"] = allTajArr
+                    print(session['user'])
+                    print(session['tajweed'])
+                    print(session['isAuthenticated'])
                 
-                                practice.insert(0, p_stats)  
-
-                            for t in i.test:
-                                t_stats = {
-                                    'test_date': t.test_date,
-                                    'test_ayah_count': t.test_ayah_count,
-                                    'test_score_correct': t.test_score_correct,
-                                    'test_out_of_count': t.test_out_of_count,
-                                    'test_score_composite': t.test_score_composite
-                                }
-                
-                                test.insert(0, t_stats) 
-                            
-                
-                            allTajObj['practice'] = practice  
-                            allTajObj['test'] = test
-                            
-
-                            allTajArr.append(allTajObj)
-
-                        session["tajweed"] = allTajArr
-                        print(session['user'])
-                        print(session['tajweed'])
-                        print(session['isAuthenticated'])
-                    
-                        return (jsonify(isAuthenticated=isAuthenticated, user=session['user'], tajweed=session['tajweed']), 200 )
-                    else:
-                        isAuthenticated = False
-                        message = 'Error logging in user'
-                        return (jsonify(isAuthenticated=isAuthenticated, message=message), 401 )
-                    
-                except IntegrityError:
+                    return (jsonify(isAuthenticated=isAuthenticated, user=session['user'], tajweed=session['tajweed'], rules=session['ruleList']), 200 )
+                else:
                     isAuthenticated = False
                     message = 'Error logging in user'
-                    return (jsonify(isAuthenticated=isAuthenticated, message=message), 500 )
+                    return (jsonify(isAuthenticated=isAuthenticated, message=message), 401 )
+                
+            except IntegrityError:
+                isAuthenticated = False
+                message = 'Error logging in user'
+                return (jsonify(isAuthenticated=isAuthenticated, message=message), 500 )
 
         else:
             print('no mode at all')        
