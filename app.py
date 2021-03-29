@@ -74,7 +74,7 @@ def get_expl():
 
 @app.route("/api/generate_ayat", methods=["POST"])
 def generate_ayat():
-    print(session)
+    print(session['user'])
     text = []
     f = open(r'C:\Users\kelly\Documents\Development Related\Portfolio Projects\islamic ed suite (angular + python + sql)\Tajweed app python backend\quran-uthmani.txt', encoding='utf-8')
     for line in f:
