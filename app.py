@@ -39,7 +39,7 @@ connect_db(app)
 sess = Session()
 sess.init_app(app)
 
-CORS(app)
+CORS(app, supports_credentials=True)
 
 wordDict = Counter()
 
