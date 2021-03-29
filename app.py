@@ -26,6 +26,7 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', "kelly-af-01221990")
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'postgresql:///tajweed')
 # app.config['SESSION_TYPE'] = 'redis'
 # app.config['SESSION_REDIS'] = redis.from_url(os.environ.get('REDIS_URL'))
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = True
@@ -43,17 +44,16 @@ connect_db(app)
 CORS(app, supports_credentials=True)
 # session_cookie = SecureCookieSessionInterface().get_signing_serializer(app)
 
-session_cookie = session
 wordDict = Counter()
 
 tajweedJSON = {}
 idghaamNoGhunnahJSON = {}
 
-@app.after_request
-def cookies(response):
-    same_cookie = session_cookie['value']
-    response.headers.add("Set-Cookie", "my_cookie={same_cookie}; Secure; HttpOnly; SameSite=None; Path=/;")
-    return response
+# @app.after_request
+# def cookies(response):
+#     same_cookie = session_cookie
+#     response.headers.add("Set-Cookie", "my_cookie={same_cookie}; Secure; HttpOnly; SameSite=None; Path=/;")
+#     return response
 
 @app.route('/')
 def start():
