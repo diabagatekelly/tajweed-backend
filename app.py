@@ -173,13 +173,8 @@ def auth():
     mode = json.loads(data["mode"])
     allTajArr = []
 
-    print('calling auth', mode)
-
     if "isAuthenticated" in session:
         isAuthenticated = True
-
-        print('firing auth', session)
-        print('session user', session['user'])
 
         saved_user = session["user"]
         tajweed = session["tajweed"]
@@ -193,8 +188,6 @@ def auth():
             "account_type" : saved_user["account_type"],
             "students": saved_user["students"]
         }
-
-        print('in verify auth and isauthenticated found in session', isAuthenticated)
 
         return (jsonify(response=isAuthenticated, user=user, tajweed=tajweed, rules=ruleList), 200 )
 
@@ -372,9 +365,6 @@ def auth():
                         allTajArr.append(allTajObj)
 
                     session["tajweed"] = allTajArr
-                    print(session['user'])
-                    print(session['tajweed'])
-                    print(session['isAuthenticated'])
                 
                     return (jsonify(isAuthenticated=isAuthenticated, user=session['user'], tajweed=session['tajweed'], rules=session['ruleList']), 200 )
                 else:
@@ -386,40 +376,10 @@ def auth():
                 isAuthenticated = False
                 message = 'Error logging in user'
                 return (jsonify(isAuthenticated=isAuthenticated, message=message), 500 )
-
-        else:
-            print('no mode at all')        
-
-# @app.route('/api/verify_auth')
-# def verify_auth():
-#     print('in verify_auth')
-#     if "isAuthenticated" in session:
-#         isAuthenticated = True
-#         saved_user = session["user"]
-#         tajweed = session["tajweed"]
-        
-#         user = {
-#             "username": saved_user["username"],
-#             "first_name": saved_user["first_name"],
-#             "last_name": saved_user["last_name"],
-#             "email": saved_user["email"],
-#             "account_type" : saved_user["account_type"],
-#             "students": saved_user["students"]
-#         }
-
-#         print('in verify auth and isauthenticated found in session', isAuthenticated)
-
-#         return (jsonify(response=isAuthenticated, user=user, tajweed=tajweed), 200 )
-#         # return (jsonify(response=isAuthenticated), 200 )
-
-#     elif not "isAuthenticated" in session:
-#         isAuthenticated = False
-#         print('in verify auth and isauthenticated NOT found in session', isAuthenticated)
-#         return (jsonify(response=isAuthenticated), 200 )
+      
 
 @app.route('/api/logout')
 def logout():
-    print('in logout', session)
     session.pop('isAuthenticated', None)
     session.pop('user', None)
     session.pop('tajweed', None)
