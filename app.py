@@ -279,12 +279,12 @@ def auth():
                     return (jsonify(isAuthenticated=isAuthenticated, user=session['user'], tajweed=session['tajweed'], rules=session['ruleList']), 200 )
                 else:
                     isAuthenticated = False
-                    message = 'Error registering user'
+                    message = 'Oops! This user might already exist. We could not create your account. Please try again.'
                     return (jsonify(isAuthenticated=isAuthenticated, message=message), 400 )
 
             except IntegrityError:
                 isAuthenticated = False
-                message = 'Error registering user'
+                message = 'Oops! This user might already exist. We could not create your account. Please try again.'
                 return (jsonify(isAuthenticated=isAuthenticated, message=message), 500 )
 
         elif mode == 'login':
@@ -369,12 +369,12 @@ def auth():
                     return (jsonify(isAuthenticated=isAuthenticated, user=session['user'], tajweed=session['tajweed'], rules=session['ruleList']), 200 )
                 else:
                     isAuthenticated = False
-                    message = 'Error logging in user'
+                    message = 'Oops! Wrong username or password. Please try again.'
                     return (jsonify(isAuthenticated=isAuthenticated, message=message), 401 )
                 
             except IntegrityError:
                 isAuthenticated = False
-                message = 'Error logging in user'
+                message = 'Oops! Wrong username or password. Please try again.'
                 return (jsonify(isAuthenticated=isAuthenticated, message=message), 500 )
       
 
