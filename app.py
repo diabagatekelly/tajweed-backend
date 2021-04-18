@@ -1,10 +1,10 @@
 import codecs
 from collections import Counter
-from flask import Flask, render_template, jsonify, json, request, session
-from flask.sessions import SecureCookieSessionInterface
-from flask_session import Session
-import redis
-from datetime import timedelta
+from flask import Flask, render_template, jsonify, json, request
+# from flask.sessions import SecureCookieSessionInterface
+# from flask_session import Session
+# import redis
+# from datetime import timedelta
 from flask_debugtoolbar import DebugToolbarExtension
 from flask_cors import CORS, cross_origin
 import pyquran as q
@@ -26,8 +26,8 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', "kelly-af-01221990")
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'postgresql:///tajweed')
 # app.config['SESSION_TYPE'] = 'redis'
 # app.config['SESSION_REDIS'] = redis.from_url(os.environ.get('REDIS_URL'))
-app.config['SESSION_COOKIE_SAMESITE'] = 'None'
-app.config['SESSION_COOKIE_SECURE']=True
+# app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+# app.config['SESSION_COOKIE_SECURE']=True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = True
 app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
@@ -41,7 +41,7 @@ connect_db(app)
 # sess = Session()
 # sess.init_app(app)
 
-CORS(app, supports_credentials=True)
+CORS(app)
 # session_cookie = SecureCookieSessionInterface().get_signing_serializer(app)
 
 wordDict = Counter()
@@ -59,9 +59,6 @@ idghaamNoGhunnahJSON = {}
 def start():
     return render_template('home.html')
 
-@app.route('/session')
-def showSess():
-    return render_template('blank.html', session=session)
 
 @app.route("/api/get_explanation", methods=["POST"])
 def get_expl():
@@ -74,11 +71,10 @@ def get_expl():
 
 @app.route("/api/generate_ayat", methods=["POST"])
 def generate_ayat():
-    print(session['user'])
-
 
     text = []
     f = open(r'/app/quran-uthmani.txt', encoding='utf-8')
+    # f = open(r'C:\Users\kelly\Documents\Development Related\Portfolio Projects\islamic ed suite (angular + python + sql)\Tajweed app python backend\quran-uthmani.txt', encoding='utf-8')
     for line in f:
         text.append(line)
     
@@ -173,216 +169,186 @@ def auth():
     mode = json.loads(data["mode"])
     allTajArr = []
 
-    if "isAuthenticated" in session:
-        isAuthenticated = True
+    if mode == 'register':
+    
+        try:
+            user = User.register(
+                first_name = userData["first_name"], 
+                last_name = userData["last_name"], 
+                email = userData["email"], 
+                username = userData["username"],
+                password = userData["password"],
+                account_type = userData["account_type"])
 
-        saved_user = session["user"]
-        tajweed = session["tajweed"]
-        ruleList = session['ruleList']
-        
-        user = {
-            "username": saved_user["username"],
-            "first_name": saved_user["first_name"],
-            "last_name": saved_user["last_name"],
-            "email": saved_user["email"],
-            "account_type" : saved_user["account_type"],
-            "students": saved_user["students"]
-        }
+            db.session.commit()
 
-        return (jsonify(response=isAuthenticated, user=user, tajweed=tajweed, rules=ruleList), 200 )
+            if user:
+                isAuthenticated = True
 
-    elif not "isAuthenticated" in session:
+                userObj = {
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "email": user.email,
+                    "username": user.username,
+                    "account_type": user.account_type,
+                    "students": []
+                }
 
-        if mode == 'register':
-        
-            try:
-                user = User.register(
-                    first_name = userData["first_name"], 
-                    last_name = userData["last_name"], 
-                    email = userData["email"], 
-                    username = userData["username"],
-                    password = userData["password"],
-                    account_type = userData["account_type"])
+                rules = TajweedRules.query.all()
 
-                db.session.commit()
+                ruleList = [{'code': r.code, 'name': r.name} for r in tajweed_rules]
 
-                if user:
-                    isAuthenticated = True
-                    session["isAuthenticated"] = user.username
+                for r in rules:
+                    user_work = UserWork(rule=r.code, practice_ayah_count=0, test_ayah_count=0, total_correct=0, total_out_of=0)
+                    db.session.add(user_work)
+                    db.session.commit()
+                    
+                    user_work_stats = UserWorkStats(user_id=user.id, work_id=user_work.id)
+                    db.session.add(user_work_stats)
+                    db.session.commit()
 
-                    session["user"] = {
-                        "first_name": user.first_name,
-                        "last_name": user.last_name,
-                        "email": user.email,
-                        "username": user.username,
-                        "account_type": user.account_type,
-                        "students": []
+                allWork = user.work
+
+                for i in allWork:  
+                                
+                    allTajObj = {
+                        "code" : i.rule,
+                        "practice_ayah_count": 0,
+                        "test_ayah_count": 0,
+                        "total_correct": 0,
+                        "total_out_of": 0
                     }
 
-                    rules = TajweedRules.query.all()
+                    practice = []
+                    test = []
 
-                    ruleList = [{'code': r.code, 'name': r.name} for r in tajweed_rules]
-                    session['ruleList'] = ruleList
-
-                    for r in rules:
-                        user_work = UserWork(rule=r.code, practice_ayah_count=0, test_ayah_count=0, total_correct=0, total_out_of=0)
-                        db.session.add(user_work)
-                        db.session.commit()
-                        
-                        user_work_stats = UserWorkStats(user_id=user.id, work_id=user_work.id)
-                        db.session.add(user_work_stats)
-                        db.session.commit()
-
-                    allWork = user.work
-
-                    for i in allWork:  
-                                    
-                        allTajObj = {
-                            "code" : i.rule,
-                            "practice_ayah_count": 0,
-                            "test_ayah_count": 0,
-                            "total_correct": 0,
-                            "total_out_of": 0
+                    for r in i.practice:
+                        p_stats = {
+                            'practice_date': r.practice_date,
+                            'ayah_count': r.ayah_count
                         }
+        
+                        practice.insert(0, p_stats)  
 
-                        practice = []
-                        test = []
-
-                        for r in i.practice:
-                            p_stats = {
-                                'practice_date': r.practice_date,
-                                'ayah_count': r.ayah_count
-                            }
-            
-                            practice.insert(0, p_stats)  
-
-                        for t in i.test:
-                            t_stats = {
-                                'test_date': t.test_date,
-                                'test_ayah_count': t.test_ayah_count,
-                                'test_score_correct': t.test_score_correct,
-                                'test_out_of_count': t.test_out_of_count,
-                                'test_score_composite': t.test_score_composite
-                            }
-            
-                            test.insert(0, t_stats) 
-                            
-            
-                        allTajObj['practice'] = practice  
-                        allTajObj['test'] = test
+                    for t in i.test:
+                        t_stats = {
+                            'test_date': t.test_date,
+                            'test_ayah_count': t.test_ayah_count,
+                            'test_score_correct': t.test_score_correct,
+                            'test_out_of_count': t.test_out_of_count,
+                            'test_score_composite': t.test_score_composite
+                        }
+        
+                        test.insert(0, t_stats) 
                         
+        
+                    allTajObj['practice'] = practice  
+                    allTajObj['test'] = test
+                    
 
-                        allTajArr.append(allTajObj)
+                    allTajArr.append(allTajObj)
 
-                    session["tajweed"] = allTajArr    
-
-                    return (jsonify(isAuthenticated=isAuthenticated, user=session['user'], tajweed=session['tajweed'], rules=session['ruleList']), 200 )
-                else:
-                    isAuthenticated = False
-                    message = 'Oops! This user might already exist. We could not create your account. Please try again.'
-                    return (jsonify(isAuthenticated=isAuthenticated, message=message), 400 )
-
-            except IntegrityError:
+                return (jsonify(isAuthenticated=isAuthenticated, user=userObj, tajweed=allTajArr, rules=ruleList), 200 )
+            else:
                 isAuthenticated = False
                 message = 'Oops! This user might already exist. We could not create your account. Please try again.'
-                return (jsonify(isAuthenticated=isAuthenticated, message=message), 500 )
+                return (jsonify(isAuthenticated=isAuthenticated, message=message), 400 )
 
-        elif mode == 'login':
-            try:
-                user = User.authenticate(
-                username = userData["username"], 
-                password = userData["password"])
+        except IntegrityError:
+            isAuthenticated = False
+            message = 'Oops! This user might already exist. We could not create your account. Please try again.'
+            return (jsonify(isAuthenticated=isAuthenticated, message=message), 500 )
 
-                db.session.commit()
+    elif mode == 'login':
+        try:
+            user = User.authenticate(
+            username = userData["username"], 
+            password = userData["password"])
 
-                if user:
-                    isAuthenticated = True
-                    session["isAuthenticated"] = user.username
+            db.session.commit()
 
-                    tajweed_rules = TajweedRules.query.all()
-                    ruleList = [{'code': r.code, 'name': r.name} for r in tajweed_rules]
-                    session['ruleList'] = ruleList
+            if user:
+                isAuthenticated = True
 
-                    session["user"] = {
-                        "first_name": user.first_name,
-                        "last_name": user.last_name,
-                        "email": user.email,
-                        "username": user.username,
-                        "account_type": user.account_type,
-                        "students": []
+                tajweed_rules = TajweedRules.query.all()
+                ruleList = [{'code': r.code, 'name': r.name} for r in tajweed_rules]
+
+                userObj = {
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "email": user.email,
+                    "username": user.username,
+                    "account_type": user.account_type,
+                    "students": []
+                }
+
+                
+                students = []
+                for i in user.students:
+                    students.append(
+                        {"first_name": i.student_firstName,
+                        "last_name": i.student_lastName,
+                        "username": i.student_username,
+                        "email": i.student_email}
+                        )
+                
+                userObj["students"] = students
+
+                allTaj = user.work
+
+                for i in allTaj:
+                    allTajObj = {
+                        "code" : i.rule,
+                        "practice_ayah_count": i.practice_ayah_count,
+                        "test_ayah_count": i.test_ayah_count,
+                        "total_correct": i.total_correct,
+                        "total_out_of": i.total_out_of
                     }
 
-                    
-                    students = []
-                    for i in user.students:
-                        students.append(
-                            {"first_name": i.student_firstName,
-                            "last_name": i.student_lastName,
-                            "username": i.student_username,
-                            "email": i.student_email}
-                            )
-                    
-                    session["user"]["students"] = students
+                    practice = []
+                    test = []
 
-                    allTaj = user.work
-
-                    for i in allTaj:
-                        allTajObj = {
-                            "code" : i.rule,
-                            "practice_ayah_count": i.practice_ayah_count,
-                            "test_ayah_count": i.test_ayah_count,
-                            "total_correct": i.total_correct,
-                            "total_out_of": i.total_out_of
+                    for r in i.practice:
+                        p_stats = {
+                            'practice_date': r.practice_date,
+                            'ayah_count': r.ayah_count
                         }
+        
+                        practice.insert(0, p_stats)  
 
-                        practice = []
-                        test = []
+                    for t in i.test:
+                        t_stats = {
+                            'test_date': t.test_date,
+                            'test_ayah_count': t.test_ayah_count,
+                            'test_score_correct': t.test_score_correct,
+                            'test_out_of_count': t.test_out_of_count,
+                            'test_score_composite': t.test_score_composite
+                        }
+        
+                        test.insert(0, t_stats) 
+                    
+        
+                    allTajObj['practice'] = practice  
+                    allTajObj['test'] = test
+                    
 
-                        for r in i.practice:
-                            p_stats = {
-                                'practice_date': r.practice_date,
-                                'ayah_count': r.ayah_count
-                            }
+                    allTajArr.append(allTajObj)
+
             
-                            practice.insert(0, p_stats)  
-
-                        for t in i.test:
-                            t_stats = {
-                                'test_date': t.test_date,
-                                'test_ayah_count': t.test_ayah_count,
-                                'test_score_correct': t.test_score_correct,
-                                'test_out_of_count': t.test_out_of_count,
-                                'test_score_composite': t.test_score_composite
-                            }
-            
-                            test.insert(0, t_stats) 
-                        
-            
-                        allTajObj['practice'] = practice  
-                        allTajObj['test'] = test
-                        
-
-                        allTajArr.append(allTajObj)
-
-                    session["tajweed"] = allTajArr
-                
-                    return (jsonify(isAuthenticated=isAuthenticated, user=session['user'], tajweed=session['tajweed'], rules=session['ruleList']), 200 )
-                else:
-                    isAuthenticated = False
-                    message = 'Oops! Wrong username or password. Please try again.'
-                    return (jsonify(isAuthenticated=isAuthenticated, message=message), 401 )
-                
-            except IntegrityError:
+                return (jsonify(isAuthenticated=isAuthenticated, user=userObj, tajweed=allTajArr, rules=ruleList), 200 )
+            else:
                 isAuthenticated = False
                 message = 'Oops! Wrong username or password. Please try again.'
-                return (jsonify(isAuthenticated=isAuthenticated, message=message), 500 )
-      
+                return (jsonify(isAuthenticated=isAuthenticated, message=message), 401 )
+            
+        except IntegrityError:
+            isAuthenticated = False
+            message = 'Oops! Wrong username or password. Please try again.'
+            return (jsonify(isAuthenticated=isAuthenticated, message=message), 500 )
+    
 
 @app.route('/api/logout')
 def logout():
-    session.pop('isAuthenticated', None)
-    session.pop('user', None)
-    session.pop('tajweed', None)
     isAuthenticated = False
 
     return (jsonify(response=isAuthenticated), 200 )
@@ -455,9 +421,8 @@ def reset_practice():
         allTajArr.append(allTajObj)
 
     if request.json['account'] == 'self':
-        session["tajweed"] = allTajArr
     
-        return (jsonify(userObj=session['user'], allTajArr=allTajArr), 200)
+        return (jsonify(allTajArr=allTajArr), 200)
     elif request.json['account'] == 'student':
         my_student = {
                     "first_name": user.first_name,
@@ -540,9 +505,8 @@ def reset_test():
         allTajArr.append(allTajObj)
 
     if request.json['account'] == 'self':
-        session["tajweed"] = allTajArr
     
-        return (jsonify(userObj=session['user'], allTajArr=allTajArr), 200)
+        return (jsonify(allTajArr=allTajArr), 200)
     elif request.json['account'] == 'student':
         my_student = {
                     "first_name": user.first_name,
@@ -614,8 +578,6 @@ def update_practice():
         
         allTajArr.append(allTajObj)
     
-    session['tajweed'] = allTajArr
-
     return (jsonify(userObj=userObj, allTajArr=allTajArr), 200)
 
 
@@ -681,19 +643,16 @@ def update_test():
 
         allTajArr.append(allTajObj)
 
-    session["tajweed"] = allTajArr
-
     return (jsonify(userObj=userObj, allTajArr=allTajArr), 200)
 
   
 @app.route('/api/update_user', methods=['POST'])
 def update_user():
     userData = request.json["user"]
-    currUser = session["user"]
 
     user = User.query.filter_by(username=userData['username']).first()
 
-    if (currUser["username"] == userData["username"]):
+    if (user["username"] == userData["username"]):
         user.first_name = userData["first_name"]
         user.last_name = userData["last_name"]
         user.email = userData["email"]
@@ -701,33 +660,26 @@ def update_user():
         db.session.add(user)
         db.session.commit()
 
-        session["user"] = userData
-
     return (jsonify(user=userData), 200)
 
 @app.route('/api/reset_password', methods=['POST'])
 def reset_password():
     userPassword = request.json["data"]
-    print(userPassword)
   
     new_pass = User.reset_pass(username=userPassword["username"], current_password=userPassword["current"], new_password=userPassword['new'])
-
-    print(new_pass)
 
     return (jsonify(response='success'), 200)
 
 @app.route('/api/delete_user', methods=['POST'])
 def delete_user():
     data = request.json["data"]
-    currUser = session['user']
 
-    if data['username'] == currUser['username']:
+    user = User.query.filter_by(username=data['username']).first()
+
+    if data['username'] == user['username']:
         deleteStat = User.delete_user(username=data['username'], password=data['password'])
 
         if deleteStat != False:
-            session.pop('isAuthenticated', None)
-            session.pop('user', None)
-            session.pop('tajweed', None)
             isAuthenticated = False
             return (jsonify(response='deleted', isAuthenticated=isAuthenticated), 200)
         else:
@@ -737,14 +689,14 @@ def delete_user():
 def add_student():
     student = request.json["data"]
     teacher = request.json['username']
-    currUser = session['user']
 
-    if teacher == currUser['username']:
+    teacher_info = User.query.filter_by(username=teacher).first()
+
+    if teacher_info:
 
         student = User.query.filter_by(username=student['student_username']).first()
 
         if student:
-            teacher_info = User.query.filter_by(username=teacher).first()
             student_list = [
                 {"username": s.student_username,
                 "first_name": s.student_firstName,
@@ -764,30 +716,37 @@ def add_student():
                 "email": s.student_email} for s in teacher_info.students if s.teacher == teacher_info.username]
             
             print('in add student after added', student_list)
-            
-            session["user"]['students'] = student_list
 
-            user = session['user']
-
-            session['user'] = user
+            userObj = {
+                "username": teacher_info.username,
+                "first_name": teacher_info.first_name,
+                "last_name": teacher_info.last_name,
+                "email": teacher_info.email,
+                "account_type": teacher_info.account_type,
+                "students": []
+                }
             
-            return (jsonify(user=user), 200)
+            userObj['students'] = student_list
+            
+            return (jsonify(user=userObj), 200)
     else:
         return (jsonify(response='failed'), 200)
 
 
 @app.route('/api/fetch_student', methods=["POST"])
 def fetch_student():
-    currUser = session['user']
     teacher = request.json['teacher']
     student = request.json['student']
 
-    if currUser['username'] == teacher:
+    teacher_info = User.query.filter_by(username=teacher).first()
+
+
+    if teacher_info:
     
         student = User.query.filter_by(username=student).first()
 
         if student:
-            teacher_info = User.query.filter_by(username=teacher).first()
+            
             student_list = [
                 {"username": s.student_username,
                 "first_name": s.student_firstName,
@@ -856,16 +815,17 @@ def fetch_student():
 
 @app.route('/api/remove_student', methods=["POST"])
 def remove_student():
-    currUser = session['user']
     teacher = request.json['teacher']
     student = request.json['student']
 
-    if currUser['username'] == teacher:
+    teacher_info = User.query.filter_by(username=teacher).first()
+
+    if teacher_info:
     
         my_student = User.query.filter_by(username=student).first()
 
         if my_student:
-            teacher_info = User.query.filter_by(username=teacher).first()
+            
             student_list = [
                 {"username": s.student_username,
                 "first_name": s.student_firstName,
@@ -884,39 +844,34 @@ def remove_student():
                 "first_name": s.student_firstName,
                 "last_name": s.student_lastName,
                 "email": s.student_email} for s in teacher_info.students if s.teacher == teacher_info.username]
-
-            session["user"]['students'] = student_list
-
-            user = session['user']
-
-            session['user'] = user
             
-            return (jsonify(user=user), 200)
+            userObj = {
+                "username": teacher_info.username,
+                "first_name": teacher_info.first_name,
+                "last_name": teacher_info.last_name,
+                "email": teacher_info.email,
+                "account_type": teacher_info.account_type,
+                "students": []
+                }
+
+            userObj['students'] = student_list
+            
+            return (jsonify(user=userObj), 200)
 
 
 @app.route('/api/fetch_rules')
 def fetch_rules():
-    print('in fetch_rules', session)
-    print('session user', session.get('user'))
-    print('session user', session['user'])
+    tajweed_rules = TajweedRules.query.all()
+    rules = [{'code': r.code, 'name': r.name} for r in tajweed_rules]
 
-
-    curr_user = session.get('user')
-    user = User.query.filter_by(username=curr_user['username']).first()
-
-    if user.username == curr_user['username']:
-        tajweed_rules = TajweedRules.query.all()
-        rules = [{'code': r.code, 'name': r.name} for r in tajweed_rules]
-
-        return (jsonify(rules=rules), 200)
+    return (jsonify(rules=rules), 200)
 
 @app.route('/api/fetch_single_rule', methods=['POST'])
 def fetch_rule():
     user = User.query.filter_by(username=request.json['user']).first()
-    curr_user = session['user']
     code = request.json['code']
 
-    if user.username == curr_user['username'] and user.account_type == 'admin':
+    if user and user.account_type == 'admin':
         tajweed_rule = TajweedRules.query.filter_by(code=code).first()
 
         rule = {
@@ -934,12 +889,11 @@ def fetch_rule():
 @app.route('/api/add_edit_rule', methods=['POST'])
 def add_edit_rule():
     user = User.query.filter_by(username=request.json['user']).first()
-    curr_user = session['user']
     ruleData = request.json['ruleData']
     mode = request.json['mode']
     allTajArr = []
 
-    if user.username == curr_user['username'] and user.account_type == 'admin':
+    if user and user.account_type == 'admin':
         if mode == 'add':
 
             new_rule = TajweedRules(code=ruleData['rule_code'], name=ruleData['rule_name'], summary=ruleData['rule_summary'], details=ruleData['rule_details'], example=ruleData['rule_example'], audio=ruleData['rule_audio'], with_exercise=ruleData['rule_with_exercise'])
@@ -998,9 +952,7 @@ def add_edit_rule():
 
                 allTajArr.append(allTajObj)
 
-            session["tajweed"] = allTajArr
-
-            return (jsonify(result='success', tajweed=session['tajweed']), 200)
+            return (jsonify(result='success', tajweed=allTajArr), 200)
         
         elif mode == 'edit':
             existing_rule = TajweedRules.query.filter_by(code=ruleData['rule_code']).first()
@@ -1020,11 +972,10 @@ def add_edit_rule():
 @app.route('/api/delete_rule', methods=['POST'])
 def delete_rule():
     user = User.query.filter_by(username=request.json['user']).first()
-    curr_user = session['user']
     code = request.json['code']
     allTajArr = []
 
-    if user.username == curr_user['username'] and user.account_type == 'admin':
+    if user and user.account_type == 'admin':
 
         deletedRule = TajweedRules.query.filter_by(code=code).delete()
         db.session.commit()
@@ -1079,8 +1030,6 @@ def delete_rule():
 
             allTajArr.append(allTajObj)
 
-        session["tajweed"] = allTajArr
-
-        return (jsonify(result='deleted', tajweed=session['tajweed']), 200)
+        return (jsonify(result='deleted', tajweed=allTajArr), 200)
 
 
